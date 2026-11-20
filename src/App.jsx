@@ -25,6 +25,8 @@ import CreateDoctorPage from './modules/doctors/pages/CreateDoctorPage';
 import DoctorDetailPage from './modules/doctors/pages/DoctorDetailPage';
 import EditDoctorPage from './modules/doctors/pages/EditDoctorPage';
 import SpecialtiesPage from './modules/specialties/pages/SpecialtiesPage';
+import CreateSpecialtyPage from './modules/specialties/pages/CreateSpecialtyPage';
+import EditSpecialtyPage from './modules/specialties/pages/EditSpecialtyPage';
 import AppointmentsSearchPage from './modules/appointments/pages/AppointmentsSearchPage';
 
 const routes = [
@@ -90,6 +92,14 @@ const routes = [
       {
         path: 'specialties',
         element: <SpecialtiesPage />,
+      },
+      {
+        path: 'specialties/new',
+        element: <CreateSpecialtyPage />,
+      },
+      {
+        path: 'specialties/:id/edit',
+        element: <EditSpecialtyPage />,
       },
       {
         path: 'doctors',

@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import { useNavigate } from 'react-router-dom';
+import DeactivateSpecialtyModal from '../components/DeactivateSpecialtyModal';
 
 function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  const [specialtyToDeactivate, setSpecialtyToDeactivate] = useState(null);
 
   const specialtiesList = [
     {
@@ -101,6 +105,23 @@ function SpecialtiesPage() {
       item.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleDeactivate = (specialty) => {
+  if (specialty.status !== 'Active') {
+    alert('Esta especialidad ya se encuentra inactiva.');
+    return;
+  }
+
+  setSpecialtyToDeactivate(specialty);
+};
+
+const confirmDeactivate = () => {
+  alert(
+    'Baja confirmada. La desactivación real se implementará al conectar el backend.'
+  );
+
+  setSpecialtyToDeactivate(null);
+};
+
   return (
     <div className="flex flex-col gap-6">
       {/* Cabecera con Título, Buscador y Botón */}
@@ -144,7 +165,7 @@ function SpecialtiesPage() {
 
           {/* Botón Nueva Especialidad */}
           <Button
-            onClick={() => alert('Abrir modal para crear nueva especialidad')}
+            onClick={() => navigate('/admin/specialties/new')}
             className="flex items-center gap-1.5 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium"
           >
             <span>+</span>
@@ -213,7 +234,7 @@ function SpecialtiesPage() {
                         title="Editar especialidad"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-text-muted hover:text-med-primary-900 transition"
                         onClick={() =>
-                          alert(`Editar especialidad ${spec.name}`)
+                          navigate(`/admin/specialties/${spec.id}/edit`)
                         }
                       >
                         <svg
@@ -234,8 +255,7 @@ function SpecialtiesPage() {
                       <button
                         title="Eliminar especialidad"
                         className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
-                        onClick={() =>
-                          alert(`Eliminar especialidad ${spec.name}`)
+                        onClick={() => handleDeactivate(spec)
                         }
                       >
                         <svg
@@ -273,6 +293,11 @@ function SpecialtiesPage() {
           </div>
         </div>
       </Card>
+      <DeactivateSpecialtyModal
+      specialty={specialtyToDeactivate}
+      onCancel={() => setSpecialtyToDeactivate(null)}
+      onConfirm={confirmDeactivate}
+    />
     </div>
   );
 }
