@@ -1,9 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getDoctors } from '../services/doctorService';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import { useNavigate } from 'react-router-dom';
 
 function DoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+  const loadDoctors = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const data = await getDoctors();
+
+      console.log('Respuesta de médicos:', data);
+    } catch (err) {
+      console.error('Error al cargar médicos:', err);
+      setError('No se pudieron cargar los médicos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadDoctors();
+ }, []);
 
   const doctorsList = [
     {
@@ -108,7 +134,7 @@ function DoctorsPage() {
           </Button>
 
           <Button
-            onClick={() => alert('Abrir modal de nuevo doctor')}
+            onClick={() => navigate('/admin/doctors/new')}
             className="flex items-center gap-1.5 bg-med-primary-700 hover:bg-med-primary-800 text-white"
           >
             <span>+</span>
