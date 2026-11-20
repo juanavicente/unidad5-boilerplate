@@ -3,6 +3,7 @@ import { getDoctors } from '../services/doctorService';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { useNavigate } from 'react-router-dom';
+import DeactivateDoctorModal from '../components/DeactivateDoctorModal';
 
 function DoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,6 +11,7 @@ function DoctorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [doctorToDeactivate, setDoctorToDeactivate] = useState(null);
 
   useEffect(() => {
   const loadDoctors = async () => {
@@ -29,8 +31,25 @@ function DoctorsPage() {
   };
 
   loadDoctors();
- }, []);
+}, []);
 
+// Función para confirmar la baja lógica de un médico
+const handleDeactivate = (doctor) => {
+  if (doctor.statusType !== 'active') {
+    alert('Este médico ya se encuentra inactivo.');
+    return;
+  }
+
+  setDoctorToDeactivate(doctor);
+};
+
+const confirmDeactivate = () => {
+  alert(
+    'Baja confirmada. La desactivación real se implementará al conectar el backend.'
+  );
+
+  setDoctorToDeactivate(null);
+};
   const doctorsList = [
     {
       id: 'MED-4920',
@@ -222,7 +241,7 @@ function DoctorsPage() {
                       <button
                         title="Ver detalle"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
-                        onClick={() => alert(`Ver detalle de ${doc.name}`)}
+                        onClick={() => navigate(`/admin/doctors/${doc.id}`)}
                       >
                         <svg
                           className="w-4 h-4"
@@ -248,7 +267,7 @@ function DoctorsPage() {
                       <button
                         title="Editar profesional"
                         className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
-                        onClick={() => alert(`Editar profesional ${doc.name}`)}
+                        onClick={() => navigate(`/admin/doctors/${doc.id}/edit`)}
                       >
                         <svg
                           className="w-4 h-4"
@@ -268,9 +287,7 @@ function DoctorsPage() {
                       <button
                         title="Eliminar profesional"
                         className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
-                        onClick={() =>
-                          alert(`Eliminar profesional ${doc.name}`)
-                        }
+                        onClick={() => handleDeactivate(doc)}
                       >
                         <svg
                           className="w-4 h-4"
@@ -307,6 +324,11 @@ function DoctorsPage() {
           </div>
         </div>
       </Card>
+      <DeactivateDoctorModal
+        doctor={doctorToDeactivate}
+        onCancel={() => setDoctorToDeactivate(null)}
+        onConfirm={confirmDeactivate}
+      />
     </div>
   );
 }
