@@ -36,11 +36,13 @@ function CreateSpecialtyPage() {
         description: description.trim(),
       };
 
-      await createSpecialty(newSpecialty);
+     await createSpecialty(newSpecialty);
 
-      alert('¡Especialidad registrada correctamente!');
-
-      navigate('/admin/specialties');
+    navigate('/admin/specialties', {
+      state: {
+        successMessage: 'Especialidad registrada correctamente.',
+      },
+    });
     } catch (err) {
       console.error('Error al registrar especialidad:', err);
 
@@ -121,27 +123,7 @@ function CreateSpecialtyPage() {
               className="w-full px-4 py-3 border border-med-border rounded-md bg-white resize-none focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
-
-          {/* Estado inicial */}
-          <div>
-            <label
-              htmlFor="specialty-status"
-              className="block text-sm font-medium text-med-text-main mb-2"
-            >
-              Estado inicial
-            </label>
-
-            <select
-              id="specialty-status"
-              value="active"
-              disabled
-              className="w-full px-4 py-3 border border-med-border rounded-md bg-gray-50 text-med-text-main"
-            >
-              <option value="active">
-                Activo - Disponible para programación
-              </option>
-            </select>
-          </div>
+      
 
           {/* Errores */}
           {error && (

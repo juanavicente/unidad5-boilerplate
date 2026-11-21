@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getDoctors, deleteDoctor } from '../services/doctorService';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
@@ -11,13 +11,26 @@ function DoctorsPage() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [doctorToDeactivate, setDoctorToDeactivate] = useState(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [total, setTotal] = useState(0);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const pageSize = 10;
   const totalPages = Math.ceil(total / pageSize);
+
+  useEffect(() => {
+  if (location.state?.successMessage) {
+    setMessage(location.state.successMessage);
+
+    window.history.replaceState(
+      { ...window.history.state, usr: null },
+      ''
+    );
+  }
+}, [location.state]);
 
   useEffect(() => {
     const loadDoctors = async () => {
@@ -41,9 +54,10 @@ function DoctorsPage() {
   }, [pageIndex, searchTerm]);
 
   const handleDeactivate = (doctor) => {
-    if (!doctor.isActive) {
-      alert('Este médico ya se encuentra inactivo.');
+    setMessage('');
 
+    if (!doctor.isActive) {
+      setMessage('Este médico ya se encuentra inactivo.');
       return;
     }
 
@@ -54,20 +68,27 @@ function DoctorsPage() {
     if (!doctorToDeactivate) return;
 
     try {
+      setMessage('');
+
       await deleteDoctor(doctorToDeactivate.id);
 
       setDoctors((previousDoctors) =>
-        previousDoctors.filter((doctor) => doctor.id !== doctorToDeactivate.id)
+        previousDoctors.filter(
+          (doctor) => doctor.id !== doctorToDeactivate.id
+        )
       );
 
       setTotal((previousTotal) => Math.max(0, previousTotal - 1));
       setDoctorToDeactivate(null);
 
-      alert('Médico desactivado correctamente.');
+      setMessage('Médico desactivado correctamente.');
     } catch (err) {
       console.error('Error al desactivar médico:', err);
 
-      alert(err.response?.data?.message || 'No se pudo desactivar el médico.');
+      setMessage(
+        err.response?.data?.message ||
+        'No se pudo desactivar el médico.'
+      );
     }
   };
 
@@ -75,6 +96,7 @@ function DoctorsPage() {
     id: doctor.id,
     name: doctor.name,
     specialty: doctor.specialty?.name ?? 'Sin especialidad',
+    isActive: doctor.isActive,
     status: doctor.isActive ? 'Activo' : 'Inactivo',
     statusType: doctor.isActive ? 'active' : 'inactive',
     avatar: '👨‍⚕️',
@@ -153,6 +175,15 @@ function DoctorsPage() {
           </Button>
         </div>
       </div>
+
+      {message && (
+      <div
+        role="status"
+        className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm"
+      >
+        {message}
+      </div>
+    )}
 
       <Card className="p-0 overflow-hidden border-med-border">
         <div className="p-5 border-b border-med-border">

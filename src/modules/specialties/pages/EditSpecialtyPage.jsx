@@ -65,11 +65,14 @@ function EditSpecialtyPage() {
         description: description.trim(),
       };
 
-      await updateSpecialty(id, updatedSpecialty);
+    await updateSpecialty(id, updatedSpecialty);
 
-      alert('¡Especialidad actualizada correctamente!');
+    navigate('/admin/specialties', {
+      state: {
+        successMessage: 'Especialidad actualizada correctamente.',
+      },
+    });
 
-      navigate('/admin/specialties');
     } catch (err) {
       console.error('Error al actualizar especialidad:', err);
 
@@ -173,26 +176,6 @@ function EditSpecialtyPage() {
               rows={5}
               className="w-full px-4 py-3 border border-med-border rounded-md bg-white resize-none focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
-          </div>
-
-          {/* Estado actual */}
-          <div>
-            <label
-              htmlFor="edit-specialty-status"
-              className="block text-sm font-medium text-med-text-main mb-2"
-            >
-              Estado actual
-            </label>
-
-            <select
-              id="edit-specialty-status"
-              value={specialty.isActive ? 'active' : 'inactive'}
-              disabled
-              className="w-full px-4 py-3 border border-med-border rounded-md bg-gray-50 text-med-text-main"
-            >
-              <option value="active">Activo</option>
-              <option value="inactive">Inactivo</option>
-            </select>
           </div>
 
           {/* Errores */}

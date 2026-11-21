@@ -3,12 +3,17 @@ import { getSpecialties, deleteSpecialty } from '../services/specialtyService';
 import TablePagination from '../../shared/components/TablePagination';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DeactivateSpecialtyModal from '../components/DeactivateSpecialtyModal';
 
 function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
+
   const [specialtyToDeactivate, setSpecialtyToDeactivate] = useState(null);
   const [specialties, setSpecialties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +26,18 @@ function SpecialtiesPage() {
   const pageSize = 10;
   const totalPages = Math.ceil(total / pageSize);
 
+  useEffect(() => {
+  if (location.state?.successMessage) {
+    setMessage(location.state.successMessage);
+    setMessageType('success');
+
+    navigate(location.pathname, {
+      replace: true,
+      state: null,
+    });
+
+  }
+}, [location.state, location.pathname, navigate]);
   useEffect(() => {
     const loadSpecialties = async () => {
       try {
@@ -57,19 +74,23 @@ function SpecialtiesPage() {
   const filteredSpecialties = specialtiesList;
 
   const handleDeactivate = (specialty) => {
-    if (specialty.status !== 'Active') {
-      alert('Esta especialidad ya se encuentra inactiva.');
+  setMessage('');
 
-      return;
-    }
+  if (specialty.status !== 'Active') {
+    setMessage('Esta especialidad ya se encuentra inactiva.');
+    setMessageType('warning');
+    return;
+  }
 
-    setSpecialtyToDeactivate(specialty);
+  setSpecialtyToDeactivate(specialty);
   };
 
   const confirmDeactivate = async () => {
     if (!specialtyToDeactivate) return;
 
     try {
+      setMessage('');
+
       await deleteSpecialty(specialtyToDeactivate.id);
 
       setSpecialtyToDeactivate(null);
@@ -86,13 +107,16 @@ function SpecialtiesPage() {
         setRefreshKey((previous) => previous + 1);
       }
 
-      alert('Especialidad desactivada correctamente.');
+      setMessage('Especialidad desactivada correctamente.');
+      setMessageType('success');
     } catch (err) {
       console.error('Error al desactivar especialidad:', err);
 
-      alert(
-        err.response?.data?.message || 'No se pudo desactivar la especialidad.'
+      setMessage(
+        err.response?.data?.message ||
+        'No se pudo desactivar la especialidad.'
       );
+      setMessageType('error');
     }
   };
 
@@ -158,6 +182,21 @@ function SpecialtiesPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+    {message && (
+      <div
+        role={messageType === 'error' ? 'alert' : 'status'}
+        className={`p-3 rounded-lg border text-sm ${
+          messageType === 'success'
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : messageType === 'error'
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+        }`}
+      >
+        {message}
+      </div>
+    )}
+
       {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">
         <div className="p-5 border-b border-med-border">
@@ -202,11 +241,11 @@ function SpecialtiesPage() {
                   <td className="px-6 py-4 text-center">
                     {spec.status === 'Active' ? (
                       <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-med-active-bg text-med-active-text">
-                        Active
+                        Activo
                       </span>
                     ) : (
                       <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
-                        Inactive
+                        Inactivo
                       </span>
                     )}
                   </td>
