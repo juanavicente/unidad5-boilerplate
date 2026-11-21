@@ -1,3 +1,4 @@
+
 import { instance } from '../../shared/api/axiosInstance';
 
 export const loginAdmin = async (email, password) => {
@@ -6,5 +7,5 @@ export const loginAdmin = async (email, password) => {
     password,
   });
 
-  return { data: response.data.token, error: null };
+  return response.data;
 };
