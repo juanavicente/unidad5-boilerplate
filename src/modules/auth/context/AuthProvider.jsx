@@ -1,6 +1,7 @@
 import { createContext, useState } from 'react';
 import { loginAdmin } from '../services/adminLogin';
 import { loginPatient } from '../services/patientLogin';
+import { logout } from '../services/logout';
 
 const AuthContext = createContext();
 
@@ -30,13 +31,19 @@ function AuthProvider({ children }) {
     setRole(data.role);
   };
 
-  const singout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    sessionStorage.removeItem('patientDni');
+  const singout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión en el servidor:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      sessionStorage.removeItem('patientDni');
 
-    setToken(null);
-    setRole(null);
+      setToken(null);
+      setRole(null);
+    }
   };
 
   const singinAdmin = async (email, password) => {

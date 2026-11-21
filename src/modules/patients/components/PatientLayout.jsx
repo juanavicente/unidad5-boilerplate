@@ -7,8 +7,8 @@ function PatientLayout() {
   const navigate = useNavigate();
   const { singout } = useAuth();
 
-  const handleLogout = () => {
-    singout();
+  const handleLogout = async () => {
+    await singout();
     setMobileMenuOpen(false);
     navigate('/login');
   };

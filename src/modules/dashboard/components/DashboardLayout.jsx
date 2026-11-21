@@ -7,8 +7,8 @@ function DashboardLayout() {
   const navigate = useNavigate();
   const { singout } = useAuth();
 
-  const handleLogout = () => {
-    singout();
+  const handleLogout = async () => {
+    await singout();
     navigate('/admin/login');
   };
 
