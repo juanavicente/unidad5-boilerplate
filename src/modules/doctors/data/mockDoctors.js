@@ -1,0 +1,38 @@
+export const mockDoctors = [
+  {
+    id: 'MED-4920',
+    name: 'Dr. Alejandro Rivera',
+    licenseNumber: 'MP-4920',
+    specialtyId: '1',
+    specialty: 'Cardiología Clínica',
+    isActive: true,
+    avatar: '👨‍⚕️',
+  },
+  {
+    id: 'MED-2104',
+    name: 'Dra. Elena Martínez',
+    licenseNumber: 'MP-2104',
+    specialtyId: '2',
+    specialty: 'Pediatría Avanzada',
+    isActive: false,
+    avatar: '👩‍⚕️',
+  },
+  {
+    id: 'MED-8831',
+    name: 'Dr. Marcos Torres',
+    licenseNumber: 'MP-8831',
+    specialtyId: '3',
+    specialty: 'Neurocirugía',
+    isActive: true,
+    avatar: '👨‍⚕️',
+  },
+  {
+    id: 'MED-1192',
+    name: 'Dra. Lucía Soria',
+    licenseNumber: 'MP-1192',
+    specialtyId: '4',
+    specialty: 'Ginecología',
+    isActive: true,
+    avatar: '👩‍⚕️',
+  },
+];
