@@ -1,4 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  getSpecialties,
+  deleteSpecialty,
+} from '../services/specialtyService';
+import TablePagination from '../../shared/components/TablePagination';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import { useNavigate } from 'react-router-dom';
@@ -8,102 +13,52 @@ function SpecialtiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const [specialtyToDeactivate, setSpecialtyToDeactivate] = useState(null);
+  const [specialties, setSpecialties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const specialtiesList = [
-    {
-      id: 1,
-      name: 'Cardiología',
-      description:
-        'Estudio y tratamiento de trastornos del corazón y del sistema circulatorio.',
-      status: 'Active',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 2,
-      name: 'Neurología',
-      description:
-        'Diagnóstico y tratamiento de todas las categorías de afecciones cerebrales.',
-      status: 'Active',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 3,
-      name: 'Dermatología',
-      description:
-        'Atención integral de enfermedades de la piel, uñas y cabello.',
-      status: 'Inactive',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: 4,
-      name: 'Pediatría',
-      description: 'Cuidado médico de lactantes, niños y adolescentes.',
-      status: 'Active',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.75"
-            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
-  ];
+  const [pageIndex, setPageIndex] = useState(0);
+  const [total, setTotal] = useState(0);
 
-  const filteredSpecialties = specialtiesList.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const pageSize = 10;
+  const totalPages = Math.ceil(total / pageSize);
+
+  useEffect(() => {
+  const loadSpecialties = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await getSpecialties(
+        pageSize,
+        pageIndex + 1,
+        searchTerm
+      );
+
+      setSpecialties(response.data ?? []);
+      setTotal(response.total ?? 0);
+    } catch (err) {
+      console.error('Error al cargar especialidades:', err);
+      setError('No se pudieron cargar las especialidades.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadSpecialties();
+  }, [pageIndex, searchTerm]);
+
+
+  const specialtiesList = specialties.map((specialty) => ({
+  id: specialty.id,
+  name: specialty.name,
+  description: specialty.description ?? '',
+  status: specialty.isActive ? 'Active' : 'Inactive',
+  icon: '🏥',
+}));
+
+  const filteredSpecialties = specialtiesList;
+
 
   const handleDeactivate = (specialty) => {
   if (specialty.status !== 'Active') {
@@ -114,12 +69,31 @@ function SpecialtiesPage() {
   setSpecialtyToDeactivate(specialty);
 };
 
-const confirmDeactivate = () => {
-  alert(
-    'Baja confirmada. La desactivación real se implementará al conectar el backend.'
-  );
+const confirmDeactivate = async () => {
+  if (!specialtyToDeactivate) return;
 
-  setSpecialtyToDeactivate(null);
+  try {
+    await deleteSpecialty(specialtyToDeactivate.id);
+
+    setSpecialties((previousSpecialties) =>
+      previousSpecialties.filter(
+        (specialty) => specialty.id !== specialtyToDeactivate.id
+      )
+    );
+
+    setTotal((previousTotal) => Math.max(0, previousTotal - 1));
+
+    setSpecialtyToDeactivate(null);
+
+    alert('Especialidad desactivada correctamente.');
+  } catch (err) {
+    console.error('Error al desactivar especialidad:', err);
+
+    alert(
+      err.response?.data?.message ||
+      'No se pudo desactivar la especialidad.'
+    );
+  }
 };
 
   return (
@@ -158,7 +132,10 @@ const confirmDeactivate = () => {
               type="text"
               placeholder="Buscar especialidad..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPageIndex(0);}}
+
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
@@ -173,6 +150,18 @@ const confirmDeactivate = () => {
           </Button>
         </div>
       </div>
+
+    {loading && (
+      <p className="text-sm text-med-text-sub">
+        Cargando especialidades...
+      </p>
+    )}
+
+    {error && (
+      <p className="text-sm text-red-600">
+        {error}
+      </p>
+    )}
 
       {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">
@@ -281,17 +270,13 @@ const confirmDeactivate = () => {
         </div>
 
         {/* Paginador normalizado idéntico a Búsqueda y Filtrado de Citas */}
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
-          <span>Mostrando 4 de 32 registros</span>
-          <div className="flex items-center gap-1">
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ‹
-            </button>
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ›
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={pageIndex + 1}
+          totalPages={Math.max(1, totalPages)}
+          totalItems={total}
+          pageSize={pageSize}
+          onPageChange={(page) => setPageIndex(page - 1)}
+        />
       </Card>
       <DeactivateSpecialtyModal
       specialty={specialtyToDeactivate}

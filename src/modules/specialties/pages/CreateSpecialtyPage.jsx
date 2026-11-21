@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createSpecialty } from '../services/specialtyService';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
@@ -9,24 +10,46 @@ function CreateSpecialtyPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
 
-    if (!name.trim()) {
-      setError('Debe ingresar el nombre de la especialidad.');
-      return;
-    }
+  if (!name.trim()) {
+    setError('Debe ingresar el nombre de la especialidad.');
+    return;
+  }
 
-    if (!description.trim()) {
-      setError('Debe ingresar una descripción.');
-      return;
-    }
+  if (!description.trim()) {
+    setError('Debe ingresar una descripción.');
+    return;
+  }
 
-    // Pendiente: conectar con createSpecialty()
-    alert('Formulario válido. Pendiente de conexión con el backend.');
-  };
+  try {
+    setSaving(true);
+
+    const newSpecialty = {
+      name: name.trim(),
+      description: description.trim(),
+    };
+
+    await createSpecialty(newSpecialty);
+
+    alert('¡Especialidad registrada correctamente!');
+
+    navigate('/admin/specialties');
+  } catch (err) {
+    console.error('Error al registrar especialidad:', err);
+
+    setError(
+      err.response?.data?.message ||
+      'No se pudo registrar la especialidad. Intente nuevamente.'
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
  return (
   <div className="flex flex-col gap-5">
@@ -150,9 +173,10 @@ function CreateSpecialtyPage() {
 
           <Button
             type="submit"
+            disabled={saving}
             className="bg-med-primary-900 hover:bg-med-primary-800 text-white"
           >
-            Guardar Especialidad
+            {saving ? 'Guardando...' : 'Guardar Especialidad'}
           </Button>
         </div>
 

@@ -1,76 +1,99 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  getSpecialtyById,
+  updateSpecialty,
+} from '../services/specialtyService';
 import { useNavigate, useParams } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
-
-// Datos simulados hasta conectar el backend
-const mockSpecialties = [
-  {
-    id: '1',
-    name: 'Cardiología',
-    description:
-      'Estudio y tratamiento de trastornos del corazón y del sistema circulatorio.',
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'Neurología',
-    description:
-      'Diagnóstico y tratamiento de todas las categorías de afecciones cerebrales.',
-    isActive: true,
-  },
-  {
-    id: '3',
-    name: 'Dermatología',
-    description:
-      'Atención integral de enfermedades de la piel, uñas y cabello.',
-    isActive: false,
-  },
-  {
-    id: '4',
-    name: 'Pediatría',
-    description: 'Cuidado médico de lactantes, niños y adolescentes.',
-    isActive: true,
-  },
-];
 
 function EditSpecialtyPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const specialty = mockSpecialties.find(
-    (item) => item.id === id
-  );
+  const [specialty, setSpecialty] = useState(null);
 
-  const [name, setName] = useState(specialty?.name ?? '');
-  const [description, setDescription] = useState(
-    specialty?.description ?? ''
-  );
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
+  useEffect(() => {
+  const loadSpecialty = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-    if (!name.trim()) {
-      setError('Debe ingresar el nombre de la especialidad.');
-      return;
+      const data = await getSpecialtyById(id);
+
+      setSpecialty(data);
+      setName(data.name ?? '');
+      setDescription(data.description ?? '');
+    } catch (err) {
+      console.error('Error al cargar especialidad:', err);
+      setError('No se pudo cargar la especialidad.');
+    } finally {
+      setLoading(false);
     }
-
-    if (!description.trim()) {
-      setError('Debe ingresar una descripción.');
-      return;
-    }
-
-    alert(
-      'Datos válidos. La actualización se realizará al conectar el backend.'
-    );
   };
+
+    loadSpecialty();
+  }, [id]);
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+
+  if (!name.trim()) {
+    setError('Debe ingresar el nombre de la especialidad.');
+    return;
+  }
+
+  if (!description.trim()) {
+    setError('Debe ingresar una descripción.');
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const updatedSpecialty = {
+      name: name.trim(),
+      description: description.trim(),
+    };
+
+    await updateSpecialty(id, updatedSpecialty);
+
+    alert('¡Especialidad actualizada correctamente!');
+
+    navigate('/admin/specialties');
+  } catch (err) {
+    console.error('Error al actualizar especialidad:', err);
+
+    setError(
+      err.response?.data?.message ||
+      'No se pudo actualizar la especialidad. Intente nuevamente.'
+    );
+  } finally {
+    setSaving(false);
+  }
+};
+
+  if (loading) {
+    return (
+      <p className="p-6 text-med-text-sub">
+        Cargando datos de la especialidad...
+      </p>
+    );
+  }
 
   if (!specialty) {
     return (
       <div className="flex flex-col gap-4">
-        <p>No se encontró la especialidad seleccionada.</p>
+      <p className="text-red-600">
+        {error || 'No se encontró la especialidad seleccionada.'}
+      </p>
 
         <button
           type="button"
@@ -203,9 +226,10 @@ function EditSpecialtyPage() {
 
             <Button
               type="submit"
+              disabled={saving}
               className="bg-med-primary-900 hover:bg-med-primary-800 text-white"
             >
-              Guardar Cambios
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
           </div>
         </form>
