@@ -59,6 +59,19 @@ export const createAppointment = async ({
   return response.data;
 };
 
+// Obtener los turnos de una fecha para el tablero administrativo.
+export const getAppointmentsByDate = async (date) => {
+  const response = await instance.get('/api/appointments', {
+    params: {
+      date,
+      pageSize: 100,
+      pageIndex: 1,
+    },
+  });
+
+  return response.data;
+};
+
 // Cancelar una reserva.
 export const cancelAppointment = async (appointmentId) => {
   const response = await instance.delete(`api/appointments/${appointmentId}`);
