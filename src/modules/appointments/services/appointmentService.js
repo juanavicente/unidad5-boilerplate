@@ -65,3 +65,26 @@ export const cancelAppointment = async (appointmentId) => {
 
   return response.data;
 };
+
+// Buscar citas desde el panel del administrador.
+export const getAppointments = async ({
+  specialtyId = null,
+  doctorId = null,
+  dni = null,
+  date = '',
+  pageSize = 10,
+  pageIndex = 1,
+} = {}) => {
+  const response = await instance.get('api/appointments/search', {
+    params: {
+      pageSize,
+      pageIndex,
+      ...(specialtyId ? { specialtyId } : {}),
+      ...(doctorId ? { doctorId } : {}),
+      ...(dni ? { dni } : {}),
+      ...(date ? { date } : {}),
+    },
+  });
+
+  return response.data;
+};
