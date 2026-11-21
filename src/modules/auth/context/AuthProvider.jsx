@@ -14,11 +14,19 @@ function AuthProvider({ children }) {
 
   const singout = () => {
     localStorage.clear();
+    sessionStorage.removeItem('patientDni');
     setIsAuthenticated(false);
   };
 
-  const setAuthSession = (token) => {
+  const setAuthSession = (token, patientDni = null) => {
     localStorage.setItem('token', token);
+
+    if (patientDni !== null) {
+      sessionStorage.setItem('patientDni', String(patientDni));
+    } else {
+      sessionStorage.removeItem('patientDni');
+    }
+
     setIsAuthenticated(true);
   };
 
@@ -57,25 +65,14 @@ function AuthProvider({ children }) {
     return { error: null };
   };
 
-  const singinPatient = async (username, password) => {
-    if (
-      (username === 'paciente' ||
-        username === 'paciente@medportal.com' ||
-        username === 'paciente@test.com') &&
-      password === 'paciente123'
-    ) {
-      setAuthSession('mock-patient-token-67890');
-
-      return { error: null };
-    }
-
-    const { data, error } = await loginPatient(username, password);
+  const singinPatient = async (email, dni) => {
+    const { data, error } = await loginPatient(email, dni);
 
     if (error) {
       return { error };
     }
 
-    setAuthSession(data);
+    setAuthSession(data, dni);
 
     return { error: null };
   };

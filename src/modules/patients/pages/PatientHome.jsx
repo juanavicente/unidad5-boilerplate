@@ -1,172 +1,355 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import {
+  getSpecialties,
+  getDoctors,
+  getAvailableSlots,
+  createAppointment,
+} from '../../appointments/services/appointmentService';
+
+function formatLocalDate(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function formatTime(time) {
+  return time ? time.slice(0, 5) : '--:--';
+}
 
 function PatientHome() {
   const navigate = useNavigate();
 
-  // Estados de selección de filtros
-  const [selectedSpecialty, setSelectedSpecialty] = useState('Cardiología');
-  const [selectedDoctorId, setSelectedDoctorId] = useState('doc-1');
+  const [specialties, setSpecialties] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
+  const [selectedDoctorId, setSelectedDoctorId] = useState('');
   const [searchedDoctorId, setSearchedDoctorId] = useState('');
-  const [weekOffset, setWeekOffset] = useState(0);
 
-  // Médicos disponibles
-  const doctorsList = [
-    {
-      id: 'doc-1',
-      name: 'Dr. Alejandro Martínez',
-      specialty: 'Cardiología',
-      specialtyDetail: 'Cardiología Intervencionista',
-      clinic: 'Clínica San Rafael • Sede Central Consultorio 402',
-      badge: 'Verificado',
-      avatar: '👨‍⚕️',
-    },
-    {
-      id: 'doc-2',
-      name: 'Dra. Elena Martínez',
-      specialty: 'Pediatría',
-      specialtyDetail: 'Pediatría Avanzada',
-      clinic: 'Clínica San Rafael • Consultorio 104',
-      badge: 'Verificado',
-      avatar: '👩‍⚕️',
-    },
-    {
-      id: 'doc-3',
-      name: 'Dr. Marcos Torres',
-      specialty: 'Neurología',
-      specialtyDetail: 'Neurocirugía Clínica',
-      clinic: 'Clínica San Rafael • Consultorio 202',
-      badge: 'Verificado',
-      avatar: '👨‍⚕️',
-    },
-  ];
-
-  const filteredDoctors = doctorsList.filter(
-    (doc) => doc.specialty === selectedSpecialty
-  );
-
-  const currentDoctor =
-    filteredDoctors.find((doc) => doc.id === selectedDoctorId);
-
-  // Días de la semana disponible
-  const today = new Date();
-
-const monday = new Date(today);
-const dayOfWeek = (today.getDay() + 6) % 7;
-
-monday.setDate(today.getDate() - dayOfWeek + weekOffset * 7);
-
-const weekDays = Array.from({ length: 5 }, (_, index) => {
-  const date = new Date(monday);
-  date.setDate(monday.getDate() + index);
-
-  return {
-    dayName: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE'][index],
-    dateNumber: String(date.getDate()),
-    fullDate: date.toLocaleDateString('es-AR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
-    isoDate: [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-'),
-  };
-});
-
-  // Horarios por día
-const mockAvailability = {
-  'doc-1': [
-    { id: 'slot-1', date: '2026-11-23', time: '08:00' },
-    { id: 'slot-2', date: '2026-11-23', time: '09:30' },
-    { id: 'slot-3', date: '2026-11-24', time: '10:00' },
-    { id: 'slot-4', date: '2026-11-30', time: '11:00' },
-  ],
-  'doc-2': [
-    { id: 'slot-5', date: '2026-11-23', time: '09:00' },
-    { id: 'slot-6', date: '2026-11-25', time: '11:30' },
-    { id: 'slot-7', date: '2026-12-01', time: '15:00' },
-  ],
-  'doc-3': [
-    { id: 'slot-8', date: '2026-11-24', time: '08:30' },
-    { id: 'slot-9', date: '2026-11-26', time: '14:00' },
-  ],
-};
-
-const availableSlots = mockAvailability[searchedDoctorId] || [];
-
-const slotsByDay = Object.fromEntries(
-  weekDays.map((day) => [
-    day.isoDate,
-    availableSlots.filter((slot) => slot.date === day.isoDate),
-  ])
-);
-
-  // Día y slot horario seleccionado
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlot, setSelectedSlot] = useState(null);
+
   const [reason, setReason] = useState('');
   const [confirmedModal, setConfirmedModal] = useState(false);
+
+  const [loadingSpecialties, setLoadingSpecialties] = useState(true);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const bookingInProgressRef = useRef(false);
+
+  const [pageError, setPageError] = useState('');
+  const [bookingError, setBookingError] = useState('');
+  const [availabilityError, setAvailabilityError] = useState('');
+
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [searchVersion, setSearchVersion] = useState(0);
+
+  // Construir los días hábiles de la semana seleccionada.
+  const weekDays = useMemo(() => {
+    const today = new Date();
+    const dayOfWeek = (today.getDay() + 6) % 7;
+
+    const monday = new Date(today);
+    monday.setHours(12, 0, 0, 0);
+
+    // Si hoy es sábado o domingo, comenzar por el próximo lunes.
+    const daysUntilMonday = dayOfWeek >= 5
+      ? 7 - dayOfWeek
+      : -dayOfWeek;
+
+    monday.setDate(
+      today.getDate() + daysUntilMonday + weekOffset * 7
+    );
+
+    return Array.from({ length: 5 }, (_, index) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
+
+      return {
+        dayName: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE'][index],
+        dateNumber: String(date.getDate()),
+        fullDate: date.toLocaleDateString('es-AR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+        isoDate: formatLocalDate(date),
+      };
+    });
+  }, [weekOffset]);
+
+  const todayIso = formatLocalDate(new Date());
+
+  const firstFutureDay =
+    weekDays.find((day) => day.isoDate >= todayIso) || weekDays[0];
+
+  // Cargar especialidades desde el backend.
+  useEffect(() => {
+    let active = true;
+
+    const loadSpecialties = async () => {
+      try {
+        setLoadingSpecialties(true);
+        setPageError('');
+
+        const response = await getSpecialties();
+
+        if (!active) return;
+
+        const items = response?.data || [];
+        setSpecialties(items);
+
+        if (items.length > 0) {
+          setSelectedSpecialty(String(items[0].id));
+        }
+      } catch (error) {
+        if (active) {
+          setPageError(
+            error?.response?.data?.message ||
+            'No se pudieron cargar las especialidades.'
+          );
+        }
+      } finally {
+        if (active) {
+          setLoadingSpecialties(false);
+        }
+      }
+    };
+
+    loadSpecialties();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Cargar médicos cuando cambia la especialidad.
+  useEffect(() => {
+    let active = true;
+
+    const loadDoctors = async () => {
+      if (!selectedSpecialty) {
+        setDoctors([]);
+        setSelectedDoctorId('');
+        return;
+      }
+
+      try {
+        setLoadingDoctors(true);
+        setDoctors([]);
+        setSelectedDoctorId('');
+        setSearchedDoctorId('');
+        setAvailableSlots([]);
+        setSelectedSlot(null);
+        setSelectedDate('');
+
+        const response = await getDoctors(selectedSpecialty);
+
+        if (!active) return;
+
+        const items = response?.data || [];
+        setDoctors(items);
+
+        if (items.length > 0) {
+          setSelectedDoctorId(String(items[0].id));
+        }
+      } catch (error) {
+        if (active) {
+          setPageError(
+            error?.response?.data?.message ||
+            'No se pudieron cargar los médicos.'
+          );
+        }
+      } finally {
+        if (active) {
+          setLoadingDoctors(false);
+        }
+      }
+    };
+
+    loadDoctors();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedSpecialty]);
+
+  // Cargar disponibilidad para los cinco días de la semana.
+  useEffect(() => {
+    let active = true;
+
+    const loadAvailability = async () => {
+      if (!searchedDoctorId) {
+        setAvailableSlots([]);
+        return;
+      }
+
+      try {
+        setLoadingSlots(true);
+        setAvailabilityError('');
+        setAvailableSlots([]);
+
+        const responses = await Promise.all(
+          weekDays.map((day) =>
+            getAvailableSlots(searchedDoctorId, day.isoDate)
+          )
+        );
+
+        if (!active) return;
+
+        const slots = responses.flatMap((response) =>
+          (response?.data || []).map((slot) => ({
+            id: slot.id,
+            date: slot.slotDate,
+            time: formatTime(slot.startTime),
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          }))
+        );
+
+        setAvailableSlots(slots);
+      } catch (error) {
+        if (active) {
+          setAvailabilityError(
+            error?.response?.data?.message ||
+            'No se pudo consultar la disponibilidad. Intentá nuevamente.'
+          );
+        }
+      } finally {
+        if (active) {
+          setLoadingSlots(false);
+        }
+      }
+    };
+
+    loadAvailability();
+
+    return () => {
+      active = false;
+    };
+  }, [searchedDoctorId, weekDays, searchVersion]);
+
+  const currentDoctor = doctors.find(
+    (doctor) => String(doctor.id) === selectedDoctorId
+  );
 
   const selectedDayObj = weekDays.find(
     (day) => day.isoDate === selectedDate
   );
 
+  const slotsByDay = Object.fromEntries(
+    weekDays.map((day) => [
+      day.isoDate,
+      availableSlots.filter((slot) => slot.date === day.isoDate),
+    ])
+  );
+
+  const handleSearchAvailability = () => {
+    if (!selectedDoctorId) {
+      setAvailabilityError('Seleccioná un médico antes de buscar.');
+      return;
+    }
+
+    setAvailabilityError('');
+    setSelectedSlot(null);
+    setSelectedDate(firstFutureDay.isoDate);
+    setSearchedDoctorId(selectedDoctorId);
+    setSearchVersion((previous) => previous + 1);
+  };
+
   const handleSelectSlot = (slot) => {
     setSelectedDate(slot.date);
     setSelectedSlot(slot);
+    setBookingError('');
   };
 
-  const buildAppointmentRequest = () => {
-    return {
-      doctorId: selectedDoctorId,
-      availabilitySlotId: selectedSlot.id,
-      reason: reason.trim(),
-    };
+  const handleChangeWeek = (direction) => {
+    setWeekOffset((previous) =>
+      Math.max(0, previous + direction)
+    );
+
+    setSelectedSlot(null);
+    setSelectedDate('');
   };
 
-  const handleConfirmAppointment = () => {
-    if (
-      !currentDoctor ||
-      searchedDoctorId !== selectedDoctorId ||
-      !selectedSlot ||
-      !availableSlots.some((slot) => slot.id === selectedSlot.id)
-    ) {
-      alert('Seleccione un médico y un horario disponible antes de confirmar.');
+  const handleConfirmAppointment = async () => {
+    // Evita solicitudes duplicadas incluso antes de que React actualice el estado.
+    if (bookingInProgressRef.current) return;
+
+    setBookingError('');
+
+    if (!currentDoctor || searchedDoctorId !== selectedDoctorId) {
+      setBookingError(
+        'Primero seleccioná un médico y consultá su disponibilidad.'
+      );
+      return;
+    }
+
+    if (!selectedSlot) {
+      setBookingError('Seleccioná un horario disponible.');
       return;
     }
 
     if (!reason.trim()) {
-      alert('Ingrese el motivo de la consulta.');
+      setBookingError('Ingresá el motivo de la consulta.');
       return;
     }
 
-    const appointmentRequest = buildAppointmentRequest();
+    const patientDni = sessionStorage.getItem('patientDni');
 
-    console.log('Datos de la reserva:', appointmentRequest);
+    if (!patientDni) {
+      setBookingError(
+        'No se encontró la información de tu sesión. Cerrá sesión e ingresá nuevamente.'
+      );
+      return;
+    }
 
-    setConfirmedModal(true);
-};
+    try {
+      bookingInProgressRef.current = true;
+      setBookingLoading(true);
 
- const handleSearchAvailability = () => {
-  if (!selectedDoctorId) {
-    alert('Seleccione un médico para buscar disponibilidad.');
-    return;
-  }
+      await createAppointment({
+        doctorId: currentDoctor.id,
+        availabilitySlotId: selectedSlot.id,
+        patientDni,
+        reason: reason.trim(),
+      });
 
-  setSearchedDoctorId(selectedDoctorId);
-  setSelectedDate(weekDays[0].isoDate);
-  setSelectedSlot(null);
+      setConfirmedModal(true);
+    } catch (error) {
+      const status = error?.response?.status;
+
+      if (status === 409) {
+        setBookingError(
+          'Ese horario acaba de ser reservado por otra persona. Buscá otro disponible.'
+        );
+      } else {
+        setBookingError(
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          'No se pudo confirmar el turno. Verificá los datos e intentá nuevamente.'
+        );
+      }
+    } finally {
+      bookingInProgressRef.current = false;
+      setBookingLoading(false);
+    }
   };
+
+  const specialtyName =
+    currentDoctor?.specialty?.name || 'Especialidad médica';
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      {/* 1. Card Superior: Selector de Especialidad y Doctor */}
+      {/* 1. Selector de especialidad y médico */}
       <Card className="p-6 sm:p-7">
         <div className="mb-5">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-med-primary-900">
@@ -177,171 +360,145 @@ const slotsByDay = Object.fromEntries(
           </p>
         </div>
 
+        {pageError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {pageError}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          {/* Especialidad */}
           <div className="md:col-span-5 flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-med-text-sub">
               Seleccionar Especialidad
             </label>
-            <div className="relative">
-              <select
-                value={selectedSpecialty}
-                onChange={(e) => {
-                const newSpecialty = e.target.value;
 
-                  setSelectedSpecialty(newSpecialty);
-
-                  const firstDoctor = doctorsList.find(
-                    (doc) => doc.specialty === newSpecialty
-                  );
-
-                  setSelectedDoctorId(firstDoctor?.id || '');
-                  setSelectedSlot(null);
-                  setSelectedDate('');
-                  setSearchedDoctorId('');
-                }}
-                className="w-full appearance-none px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 pr-10 cursor-pointer"
-              >
-                <option value="Cardiología">Cardiología</option>
-                <option value="Pediatría">Pediatría</option>
-                <option value="Neurología">Neurología</option>
-                <option value="Dermatología">Dermatología</option>
-                <option value="Medicina General">Medicina General</option>
-              </select>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-med-text-muted">
-                ▼
-              </span>
-            </div>
-          </div>
-
-          {/* Doctor */}
-          <div className="md:col-span-4 flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-med-text-sub">
-              Seleccionar Doctor
-            </label>
-            <div className="relative">
-              <select
-                value={selectedDoctorId}
-                onChange={(e) => {
-                setSelectedDoctorId(e.target.value);
-                setSelectedSlot(null);
-                setSelectedDate('');
-                setSearchedDoctorId('');
+            <select
+              value={selectedSpecialty}
+              disabled={loadingSpecialties || specialties.length === 0}
+              onChange={(event) => {
+                setSelectedSpecialty(event.target.value);
+                setBookingError('');
               }}
-                className="w-full appearance-none px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 pr-10 cursor-pointer"
-              >
-                <option value="">Seleccione un médico</option>
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 disabled:bg-gray-100"
+            >
+              <option value="">
+                {loadingSpecialties
+                  ? 'Cargando especialidades...'
+                  : specialties.length === 0
+                    ? 'No hay especialidades disponibles'
+                    : 'Seleccione una especialidad'}
+              </option>
 
-                 {filteredDoctors.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.name}
+              {specialties.map((specialty) => (
+                <option key={specialty.id} value={String(specialty.id)}>
+                  {specialty.name}
                 </option>
               ))}
-              </select>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-med-text-muted">
-                ▼
-              </span>
-            </div>
+            </select>
           </div>
 
-          {/* Botón Buscar Disponibilidad */}
+          <div className="md:col-span-4 flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-med-text-sub">
+              Seleccionar Médico
+            </label>
+
+            <select
+              value={selectedDoctorId}
+              disabled={loadingDoctors || doctors.length === 0}
+              onChange={(event) => {
+                setSelectedDoctorId(event.target.value);
+                setSearchedDoctorId('');
+                setAvailableSlots([]);
+                setSelectedSlot(null);
+                setSelectedDate('');
+                setBookingError('');
+                setAvailabilityError('');
+              }}
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 disabled:bg-gray-100"
+            >
+              <option value="">
+                {loadingDoctors
+                  ? 'Cargando médicos...'
+                  : doctors.length === 0
+                    ? 'No hay médicos disponibles'
+                    : 'Seleccione un médico'}
+              </option>
+
+              {doctors.map((doctor) => (
+                <option key={doctor.id} value={String(doctor.id)}>
+                  {doctor.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="md:col-span-3">
             <Button
               type="button"
               className="w-full flex items-center justify-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium py-2.5 rounded-lg shadow-sm"
               onClick={handleSearchAvailability}
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
               <span>Buscar Disponibilidad</span>
             </Button>
           </div>
         </div>
       </Card>
 
-      {/* 2. Card de Información del Doctor Seleccionado (Sin reseñas de doctor) */}
+      {/* 2. Información del médico */}
       {currentDoctor && (
-      <Card className="p-5 sm:p-6 flex items-center gap-4 border-med-border">
-        <div className="relative shrink-0">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-med-primary-100 flex items-center justify-center text-3xl border border-med-primary-200">
-            {currentDoctor?.avatar}
+        <Card className="p-5 sm:p-6 flex items-center gap-4 border-med-border">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-med-primary-100 flex items-center justify-center text-3xl border border-med-primary-200 shrink-0">
+            🩺
           </div>
-          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
-        </div>
 
-        <div className="overflow-hidden">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="overflow-hidden">
             <h2 className="text-base sm:text-lg font-bold text-med-primary-900">
-              {currentDoctor?.name}
+              {currentDoctor.name}
             </h2>
-            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-med-primary-100 text-med-primary-700">
-              {currentDoctor?.badge}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm font-semibold uppercase sm:normal-case tracking-wide sm:tracking-normal text-med-primary-700 sm:text-med-text-sub mt-0.5">
-            {currentDoctor?.specialtyDetail}
-          </p>
-          <p className="text-xs text-med-text-muted mt-0.5 truncate">
-            {currentDoctor?.clinic}
-          </p>
-        </div>
-      </Card>)}
 
-      {searchedDoctorId === selectedDoctorId && selectedDoctorId && (
-        <p className="text-sm text-green-700">
-          Disponibilidad consultada para {currentDoctor?.name}.
-        </p>
+            <p className="text-xs sm:text-sm font-semibold text-med-primary-700 mt-0.5">
+              {specialtyName}
+            </p>
+
+            <p className="text-xs text-med-text-muted mt-0.5">
+              Profesional disponible para reservas
+            </p>
+          </div>
+        </Card>
       )}
 
-      {/* 3. Selector Semanal de Disponibilidad */}
+      {/* 3. Calendario de disponibilidad */}
       <Card className="p-5 sm:p-6 border-med-border">
-        {/* Cabecera del calendario de semana */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-med-border-subtle">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="p-1 rounded-md border border-med-border hover:bg-gray-50 text-med-text-sub transition"
-              onClick={() => {
-              setWeekOffset((prev) => Math.max(0, prev - 1));
-              setSelectedSlot(null);
-              setSelectedDate('');
-            }}
+              disabled={weekOffset === 0}
+              className="p-1 rounded-md border border-med-border hover:bg-gray-50 text-med-text-sub transition disabled:opacity-30"
+              onClick={() => handleChangeWeek(-1)}
             >
               ‹
             </button>
+
             <span className="font-bold text-sm sm:text-base text-med-primary-900">
               {weekDays[0].fullDate} - {weekDays[4].fullDate}
             </span>
+
             <button
               type="button"
               className="p-1 rounded-md border border-med-border hover:bg-gray-50 text-med-text-sub transition"
-              onClick={() => {
-              setWeekOffset((prev) => prev + 1);
-              setSelectedSlot(null);
-              setSelectedDate('');
-            }}
+              onClick={() => handleChangeWeek(1)}
             >
               ›
             </button>
           </div>
 
-          {/* Leyenda */}
           <div className="flex items-center gap-4 text-xs text-med-text-sub">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-med-primary-900" />
               Disponible
             </span>
+
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
               Seleccionado
@@ -349,156 +506,173 @@ const slotsByDay = Object.fromEntries(
           </div>
         </div>
 
-        {/* --- A) VISTA DESKTOP: Grid semanal de 5 columnas (visible en sm+) --- */}
-        <div className="hidden sm:grid sm:grid-cols-5 gap-3 pt-5">
-          {weekDays.map((day) => {
-           const slots = slotsByDay[day.isoDate] || [];
+        {availabilityError && (
+          <p className="mt-4 text-sm text-red-600">
+            {availabilityError}
+          </p>
+        )}
 
-            return (
-              <div
-                key={day.dateNumber}
-                className="flex flex-col items-center gap-3"
-              >
-                {/* Cabecera del día */}
-                <div className="text-center">
-                  <span className="text-[11px] font-bold text-med-text-sub uppercase">
-                    {day.dayName}
-                  </span>
-                  <p className="text-xl font-bold text-med-primary-900 leading-tight">
-                    {day.dateNumber}
-                  </p>
+        {!searchedDoctorId && (
+          <p className="py-12 text-center text-sm text-med-text-muted">
+            Seleccioná un médico y presioná «Buscar Disponibilidad» para consultar sus horarios.
+          </p>
+        )}
+
+        {searchedDoctorId && loadingSlots && (
+          <p className="py-12 text-center text-sm text-med-text-muted">
+            Consultando horarios disponibles...
+          </p>
+        )}
+
+        {searchedDoctorId && !loadingSlots && (
+          <>
+            {/* Vista desktop */}
+            <div className="hidden sm:grid sm:grid-cols-5 gap-3 pt-5">
+              {weekDays.map((day) => {
+                const slots = slotsByDay[day.isoDate] || [];
+
+                return (
+                  <div
+                    key={day.isoDate}
+                    className="flex flex-col items-center gap-3"
+                  >
+                    <div className="text-center">
+                      <span className="text-[11px] font-bold text-med-text-sub uppercase">
+                        {day.dayName}
+                      </span>
+
+                      <p className="text-xl font-bold text-med-primary-900 leading-tight">
+                        {day.dateNumber}
+                      </p>
+                    </div>
+
+                    <div className="w-full flex flex-col gap-2">
+                      {slots.length > 0 ? (
+                        slots.map((slot) => {
+                          const isSelected =
+                            selectedSlot?.id === slot.id;
+
+                          return (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              onClick={() => handleSelectSlot(slot)}
+                              className={`w-full py-2 px-3 text-xs font-semibold rounded-lg border transition-all text-center ${
+                                isSelected
+                                  ? 'bg-emerald-400 text-white border-emerald-400 shadow-sm'
+                                  : 'bg-white border-med-border text-med-primary-900 hover:border-med-primary-600 hover:bg-med-primary-50/50'
+                              }`}
+                            >
+                              {slot.time}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="h-32 flex items-center justify-center text-center p-2">
+                          <p className="text-xs text-med-text-muted leading-relaxed">
+                            No hay turnos disponibles.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Vista mobile */}
+            <div className="block sm:hidden pt-4 space-y-4">
+              <div>
+                <span className="block text-xs font-bold text-med-text-main mb-2">
+                  Próximos Turnos
+                </span>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                  {weekDays.map((day) => {
+                    const isActive = selectedDate === day.isoDate;
+
+                    return (
+                      <button
+                        key={day.isoDate}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDate(day.isoDate);
+                          setSelectedSlot(null);
+                        }}
+                        className={`flex-1 min-w-[68px] py-2.5 px-2 rounded-xl text-center border transition-all ${
+                          isActive
+                            ? 'bg-med-primary-900 text-white border-med-primary-900 shadow-sm'
+                            : 'bg-white border-med-border text-med-text-main hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="block text-[10px] font-bold uppercase">
+                          {day.dayName}
+                        </span>
+
+                        <span className="block text-base font-extrabold my-0.5">
+                          {day.dateNumber}
+                        </span>
+
+                        <span className="block text-[10px] uppercase">
+                          {new Date(`${day.isoDate}T12:00:00`)
+                            .toLocaleDateString('es-AR', {
+                              month: 'short',
+                            })
+                            .toUpperCase()}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                {/* Slots del día */}
-                <div className="w-full flex flex-col gap-2">
-                  {slots.length > 0 ? (
-                    slots.map((slot) => {
-                      const isSelected = selectedSlot?.id === slot.id;
+              <div>
+                <span className="block text-xs font-bold text-med-text-sub mb-2.5">
+                  Horarios disponibles
+                </span>
+
+                {slotsByDay[selectedDate]?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {slotsByDay[selectedDate].map((slot) => {
+                      const isSelected =
+                        selectedSlot?.id === slot.id;
 
                       return (
                         <button
                           key={slot.id}
                           type="button"
                           onClick={() => handleSelectSlot(slot)}
-                          className={`w-full py-2 px-3 text-xs font-semibold rounded-lg border transition-all text-center ${
+                          className={`py-2 px-2 text-xs font-semibold rounded-lg border transition-all ${
                             isSelected
-                              ? 'bg-emerald-400 text-white border-emerald-400 shadow-sm'
-                              : 'bg-white border-med-border text-med-primary-900 hover:border-med-primary-600 hover:bg-med-primary-50/50'
+                              ? 'border-2 border-med-primary-900 bg-white text-med-primary-900 font-bold shadow-xs'
+                              : 'bg-white border-med-border text-med-text-main hover:bg-gray-50'
                           }`}
                         >
-                          {slot.time}
+                          {slot.time} hs
                         </button>
                       );
-                    })
-                  ) : (
-                    <div className="h-44 flex items-center justify-center text-center p-2">
-                      <p className="text-xs text-med-text-muted leading-relaxed">
-                        No hay turnos disponibles para este día.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gray-50 border border-med-border rounded-xl text-center">
+                    <p className="text-xs text-med-text-muted">
+                      No hay turnos disponibles para este día seleccionado.
+                    </p>
+                  </div>
+                )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* --- B) VISTA MOBILE: Selector de días horizontal + Horarios en bloques (visible en mobile) --- */}
-        <div className="block sm:hidden pt-4 space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-med-text-main">
-                Próximos Turnos
-              </span>
-              <span className="text-xs font-semibold text-med-primary-700">
-                Ver más ›
-              </span>
             </div>
 
-            {/* Días en fila desplazable */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {weekDays.map((day) => {
-                const isActive = selectedDate === day.isoDate;
-
-                return (
-                  <button
-                    key={day.isoDate}
-                    type="button"
-                   onClick={() => {
-                      setSelectedDate(day.isoDate);
-                      setSelectedSlot(null);
-                    }}
-
-                    className={`flex-1 min-w-[68px] py-2.5 px-2 rounded-xl text-center border transition-all ${
-                      isActive
-                        ? 'bg-med-primary-900 text-white border-med-primary-900 shadow-sm'
-                        : 'bg-white border-med-border text-med-text-main hover:bg-gray-50'
-                    }`}
-                  >
-                    <span
-                      className={`block text-[10px] font-bold uppercase ${
-                        isActive ? 'text-white/80' : 'text-med-text-sub'
-                      }`}
-                    >
-                      {day.dayName}
-                    </span>
-                    <span className="block text-base font-extrabold my-0.5">
-                      {day.dateNumber}
-                    </span>
-                    <span
-                      className={`block text-[10px] uppercase ${
-                        isActive ? 'text-white/80' : 'text-med-text-muted'
-                      }`}
-                    >
-                     {new Date(`${day.isoDate}T12:00:00`)
-                    .toLocaleDateString('es-AR', { month: 'short' })
-                    .toUpperCase()}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Horarios disponibles para el día seleccionado en mobile */}
-          <div>
-            <span className="block text-xs font-bold text-med-text-sub mb-2.5">
-              Horarios disponibles (Bloques de 30 min)
-            </span>
-
-            {slotsByDay[selectedDate]?.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2">
-                {slotsByDay[selectedDate].map((slot) => {
-                  const isSelected = selectedSlot?.id === slot.id;
-
-                  return (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      onClick={() => handleSelectSlot(slot)}
-                      className={`py-2 px-2 text-xs font-semibold rounded-lg border transition-all ${
-                        isSelected
-                          ? 'border-2 border-med-primary-900 bg-white text-med-primary-900 font-bold shadow-xs'
-                          : 'bg-white border-med-border text-med-text-main hover:bg-gray-50'
-                      }`}
-                    >
-                      {slot.time} hs
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="p-6 bg-gray-50 border border-med-border rounded-xl text-center">
-                <p className="text-xs text-med-text-muted">
-                  No hay turnos disponibles para este día seleccionado.
-                </p>
-              </div>
+            {availableSlots.length === 0 && (
+              <p className="mt-4 text-xs text-med-text-muted text-center">
+                No encontramos horarios disponibles para esta semana.
+              </p>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </Card>
 
-      {/* Motivo de consulta */}
+      {/* 4. Motivo de consulta */}
       <Card className="p-5 sm:p-6 border-med-border">
         <div className="flex flex-col gap-2">
           <label
@@ -511,7 +685,7 @@ const slotsByDay = Object.fromEntries(
           <textarea
             id="reason"
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(event) => setReason(event.target.value)}
             placeholder="Ej: Consulta de control general"
             rows={3}
             maxLength={500}
@@ -524,82 +698,82 @@ const slotsByDay = Object.fromEntries(
         </div>
       </Card>
 
-      {/* 4. Banner / Resumen de Selección y Confirmación */}
+      {/* 5. Resumen y confirmación */}
       <div className="bg-med-primary-50 border border-med-primary-200/60 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Detalle del Turno */}
         <div className="border-l-4 border-med-primary-900 pl-3.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-med-text-sub">
             Resumen de Selección
           </span>
+
           <p className="text-base sm:text-lg font-bold text-med-primary-900 mt-0.5 flex items-center gap-2">
             <span>📅</span>
+
             <span>
-              {selectedDayObj?.fullDate || 'Seleccione una fecha'}, {selectedSlot?.time || '--:--'} HS
+              {selectedDayObj?.fullDate || 'Seleccione una fecha'},{' '}
+              {selectedSlot?.time || '--:--'} HS
             </span>
           </p>
+
           <p className="text-xs text-med-text-sub mt-0.5">
-            {currentDoctor?.clinic} • Duración: 30 min
+            {currentDoctor?.name || 'Seleccione un médico'}
+            {' • '}
+            {specialtyName}
           </p>
         </div>
 
-        {/* Botón de Confirmación */}
         <Button
           type="button"
           onClick={handleConfirmAppointment}
-          className="flex items-center justify-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium py-3 px-6 rounded-xl shadow-md text-sm shrink-0"
+          disabled={bookingLoading}
+          aria-busy={bookingLoading}
+          className={`flex items-center justify-center gap-2 text-white font-medium py-3 px-6 rounded-xl shadow-md text-sm shrink-0 ${
+            bookingLoading
+              ? 'bg-med-primary-700 opacity-70 cursor-not-allowed'
+              : 'bg-med-primary-900 hover:bg-med-primary-800'
+          }`}
         >
-          <span>Confirmar Turno</span>
-          <svg
-            className="w-5 h-5 text-emerald-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <span>
+            {bookingLoading ? 'Reservando...' : 'Confirmar Turno'}
+          </span>
         </Button>
       </div>
 
-      {/* Modal de Confirmación Exitosa */}
+      {bookingError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {bookingError}
+        </div>
+      )}
+
+      {/* 6. Modal de confirmación */}
       {confirmedModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 text-center animate-in fade-in zoom-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 text-center">
             <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
               ✓
             </div>
+
             <h3 className="text-xl font-bold text-med-primary-900">
-              ¡Turno Confirmado con Éxito!
+              ¡Turno confirmado con éxito!
             </h3>
+
             <p className="text-xs text-med-text-sub mt-2 leading-relaxed">
-              Tu turno con el{' '}
+              Tu turno con{' '}
               <strong className="text-med-text-main">
                 {currentDoctor?.name}
               </strong>{' '}
-              ha sido reservado para el{' '}
+              fue reservado para el{' '}
               <strong className="text-med-text-main">
-                 {selectedDayObj?.fullDate || 'Fecha no seleccionada'} a las{' '}
-  {selectedSlot?.time || '--:--'} hs
+                {selectedDayObj?.fullDate} a las {selectedSlot?.time} hs.
               </strong>
-              .
             </p>
 
-            <div className="mt-5 p-3.5 bg-med-primary-50 border border-med-primary-200/60 rounded-xl text-xs text-med-primary-900 text-left space-y-1">
+            <div className="mt-5 p-3.5 bg-med-primary-50 border border-med-primary-200/60 rounded-xl text-xs text-med-primary-900 text-left space-y-2">
               <p>
-                <strong>Especialidad:</strong> {currentDoctor?.specialtyDetail}
+                <strong>Especialidad:</strong> {specialtyName}
               </p>
+
               <p>
                 <strong>Motivo:</strong> {reason}
-              </p>
-              <p>
-                <strong>Lugar:</strong> {currentDoctor?.clinic}
-              </p>
-              <p>
-                <strong>Paciente:</strong> Johnathan Doe (DNI: 40.123.456)
               </p>
             </div>
 
@@ -610,10 +784,19 @@ const slotsByDay = Object.fromEntries(
               >
                 Ver Mis Turnos
               </Button>
+
               <Button
                 variant="secondary"
                 className="w-full text-xs py-2.5"
-                onClick={() => setConfirmedModal(false)}
+                onClick={() => {
+                  setConfirmedModal(false);
+                  setSelectedSlot(null);
+                  setReason('');
+                  setSearchedDoctorId('');
+                  setAvailableSlots([]);
+                  setSelectedDate('');
+                  setBookingError('');
+                }}
               >
                 Reservar Otro
               </Button>
