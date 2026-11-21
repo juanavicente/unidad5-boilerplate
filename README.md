@@ -6,12 +6,12 @@
 
 ### Integrantes
 
-| Integrante | Legajo |
-|---|---|
-| Baena, Paula Melina | 60596 |
-| Chirino, Carlos Iván | 60388 |
-| Robles, Sisa Verónica | 60535 |
-| Vicente, Juana | 60599 |
+| Integrante            | Legajo |
+| --------------------- | ------ |
+| Baena, Paula Melina   | 60596  |
+| Chirino, Carlos Iván  | 60388  |
+| Robles, Sisa Verónica | 60535  |
+| Vicente, Juana        | 60599  |
 
 ## 1. Descripción del proyecto
 
@@ -122,36 +122,36 @@ Abrir esa dirección en el navegador.
 
 ### Otros comandos
 
-| Comando | Descripción |
-|---|---|
-| `npm install` | Instala las dependencias |
-| `npm run dev` | Inicia el servidor de desarrollo |
-| `npm run build` | Genera la compilación de producción |
-| `npm run preview` | Permite previsualizar la compilación |
-| `npm run lint` | Ejecuta ESLint |
-| `npm run format` | Aplica el formato de Prettier |
-| `npm run format:check` | Comprueba el formato del código |
+| Comando                | Descripción                          |
+| ---------------------- | ------------------------------------ |
+| `npm install`          | Instala las dependencias             |
+| `npm run dev`          | Inicia el servidor de desarrollo     |
+| `npm run build`        | Genera la compilación de producción  |
+| `npm run preview`      | Permite previsualizar la compilación |
+| `npm run lint`         | Ejecuta ESLint                       |
+| `npm run format`       | Aplica el formato de Prettier        |
+| `npm run format:check` | Comprueba el formato del código      |
 
 ## 8. Rutas principales del frontend
 
 ### Pacientes
 
-| Ruta | Funcionalidad |
-|---|---|
-| `/login` | Inicio de sesión del paciente |
-| `/` | Inicio y búsqueda de disponibilidades |
-| `/appointments` | Consulta de turnos del paciente |
+| Ruta            | Funcionalidad                         |
+| --------------- | ------------------------------------- |
+| `/login`        | Inicio de sesión del paciente         |
+| `/`             | Inicio y búsqueda de disponibilidades |
+| `/appointments` | Consulta de turnos del paciente       |
 
 ### Administración
 
-| Ruta | Funcionalidad |
-|---|---|
-| `/admin/login` | Inicio de sesión del administrador |
-| `/admin/home` | Panel de administración |
-| `/admin/doctors` | Gestión de médicos |
-| `/admin/specialties` | Gestión de especialidades |
-| `/admin/availabilities` | Gestión de disponibilidades |
-| `/admin/patients` | Búsqueda y filtrado de citas |
+| Ruta                    | Funcionalidad                      |
+| ----------------------- | ---------------------------------- |
+| `/admin/login`          | Inicio de sesión del administrador |
+| `/admin/home`           | Panel de administración            |
+| `/admin/doctors`        | Gestión de médicos                 |
+| `/admin/specialties`    | Gestión de especialidades          |
+| `/admin/availabilities` | Gestión de disponibilidades        |
+| `/admin/patients`       | Búsqueda y filtrado de citas       |
 
 Las rutas protegidas requieren autenticación y el rol correspondiente.
 
@@ -161,48 +161,48 @@ Todas las rutas se resuelven respecto de `VITE_BACKEND_URL`.
 
 ### Autenticación
 
-| Método | Endpoint | Descripción |
-|---|---|---|
-| POST | `/api/auth/patient/login` | Inicio de sesión del paciente |
-| POST | `/api/auth/admin/login` | Inicio de sesión del administrador |
+| Método | Endpoint                  | Descripción                        |
+| ------ | ------------------------- | ---------------------------------- |
+| POST   | `/api/auth/patient/login` | Inicio de sesión del paciente      |
+| POST   | `/api/auth/admin/login`   | Inicio de sesión del administrador |
 
 ### Médicos
 
-| Método | Endpoint | Descripción |
-|---|---|---|
-| GET | `/api/doctors` | Listar y buscar médicos |
-| GET | `/api/doctors/{id}` | Consultar médico |
-| POST | `/api/doctors` | Registrar médico |
-| PUT | `/api/doctors/{id}` | Actualizar médico |
-| DELETE | `/api/doctors/{id}` | Dar de baja médico |
+| Método | Endpoint            | Descripción             |
+| ------ | ------------------- | ----------------------- |
+| GET    | `/api/doctors`      | Listar y buscar médicos |
+| GET    | `/api/doctors/{id}` | Consultar médico        |
+| POST   | `/api/doctors`      | Registrar médico        |
+| PUT    | `/api/doctors/{id}` | Actualizar médico       |
+| DELETE | `/api/doctors/{id}` | Dar de baja médico      |
 
 ### Especialidades
 
-| Método | Endpoint | Descripción |
-|---|---|---|
-| GET | `/api/specialties` | Listar especialidades |
-| GET | `/api/specialties/{id}` | Consultar especialidad |
-| POST | `/api/specialties` | Registrar especialidad |
-| PUT | `/api/specialties/{id}` | Actualizar especialidad |
+| Método | Endpoint                | Descripción              |
+| ------ | ----------------------- | ------------------------ |
+| GET    | `/api/specialties`      | Listar especialidades    |
+| GET    | `/api/specialties/{id}` | Consultar especialidad   |
+| POST   | `/api/specialties`      | Registrar especialidad   |
+| PUT    | `/api/specialties/{id}` | Actualizar especialidad  |
 | DELETE | `/api/specialties/{id}` | Dar de baja especialidad |
 
 ### Disponibilidades
 
-| Método | Endpoint | Descripción |
-|---|---|---|
-| GET | `/api/doctors/{id}/availabilities` | Consultar disponibilidades del médico |
-| GET | `/api/availabilities/{id}/slots` | Consultar horarios disponibles |
-| POST | `/api/availabilities` | Registrar disponibilidad |
-| PUT | `/api/availabilities` | Actualizar disponibilidad |
+| Método | Endpoint                           | Descripción                           |
+| ------ | ---------------------------------- | ------------------------------------- |
+| GET    | `/api/doctors/{id}/availabilities` | Consultar disponibilidades del médico |
+| GET    | `/api/availabilities/{id}/slots`   | Consultar horarios disponibles        |
+| POST   | `/api/availabilities`              | Registrar disponibilidad              |
+| PUT    | `/api/availabilities`              | Actualizar disponibilidad             |
 
 ### Citas
 
-| Método | Endpoint | Descripción |
-|---|---|---|
-| GET | `/api/appointments/patient` | Consultar citas del paciente autenticado |
-| POST | `/api/appointments` | Reservar cita |
-| DELETE | `/api/appointments/{id}` | Cancelar cita |
-| GET | `/api/appointments/search` | Buscar citas desde administración |
+| Método | Endpoint                    | Descripción                              |
+| ------ | --------------------------- | ---------------------------------------- |
+| GET    | `/api/appointments/patient` | Consultar citas del paciente autenticado |
+| POST   | `/api/appointments`         | Reservar cita                            |
+| DELETE | `/api/appointments/{id}`    | Cancelar cita                            |
+| GET    | `/api/appointments/search`  | Buscar citas desde administración        |
 
 El endpoint de búsqueda administrativa admite filtros opcionales por `dni`, `specialtyId`, `doctorId` y `date`, además de parámetros de paginación.
 

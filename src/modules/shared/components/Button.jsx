@@ -5,9 +5,8 @@ function Button({
   className = '',
   ...restProps
 }) {
-  if (!['button', 'reset', 'submit'].includes(type)) {
-    console.warn('type prop not supported');
-  }
+  const validTypes = ['button', 'reset', 'submit'];
+  const buttonType = validTypes.includes(type) ? type : 'button';
 
   const variantStyle = {
     default:
@@ -26,7 +25,7 @@ function Button({
     `${variantStyle[variant] || variantStyle.default} ${className}`.trim();
 
   return (
-    <button {...restProps} className={appliedClass} type={type}>
+    <button {...restProps} className={appliedClass} type={buttonType}>
       {children}
     </button>
   );
