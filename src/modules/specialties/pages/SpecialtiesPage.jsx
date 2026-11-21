@@ -27,17 +27,16 @@ function SpecialtiesPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   useEffect(() => {
-  if (location.state?.successMessage) {
-    setMessage(location.state.successMessage);
-    setMessageType('success');
+    if (location.state?.successMessage) {
+      setMessage(location.state.successMessage);
+      setMessageType('success');
 
-    navigate(location.pathname, {
-      replace: true,
-      state: null,
-    });
-
-  }
-}, [location.state, location.pathname, navigate]);
+      navigate(location.pathname, {
+        replace: true,
+        state: null,
+      });
+    }
+  }, [location.state, location.pathname, navigate]);
   useEffect(() => {
     const loadSpecialties = async () => {
       try {
@@ -74,15 +73,16 @@ function SpecialtiesPage() {
   const filteredSpecialties = specialtiesList;
 
   const handleDeactivate = (specialty) => {
-  setMessage('');
+    setMessage('');
 
-  if (specialty.status !== 'Active') {
-    setMessage('Esta especialidad ya se encuentra inactiva.');
-    setMessageType('warning');
-    return;
-  }
+    if (specialty.status !== 'Active') {
+      setMessage('Esta especialidad ya se encuentra inactiva.');
+      setMessageType('warning');
 
-  setSpecialtyToDeactivate(specialty);
+      return;
+    }
+
+    setSpecialtyToDeactivate(specialty);
   };
 
   const confirmDeactivate = async () => {
@@ -113,8 +113,7 @@ function SpecialtiesPage() {
       console.error('Error al desactivar especialidad:', err);
 
       setMessage(
-        err.response?.data?.message ||
-        'No se pudo desactivar la especialidad.'
+        err.response?.data?.message || 'No se pudo desactivar la especialidad.'
       );
       setMessageType('error');
     }
@@ -182,20 +181,20 @@ function SpecialtiesPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-    {message && (
-      <div
-        role={messageType === 'error' ? 'alert' : 'status'}
-        className={`p-3 rounded-lg border text-sm ${
-          messageType === 'success'
-            ? 'bg-green-50 border-green-200 text-green-700'
-            : messageType === 'error'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-yellow-50 border-yellow-200 text-yellow-800'
-        }`}
-      >
-        {message}
-      </div>
-    )}
+      {message && (
+        <div
+          role={messageType === 'error' ? 'alert' : 'status'}
+          className={`p-3 rounded-lg border text-sm ${
+            messageType === 'success'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : messageType === 'error'
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+          }`}
+        >
+          {message}
+        </div>
+      )}
 
       {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import {
   getAppointments,
@@ -49,9 +48,7 @@ function AppointmentsSearchPage() {
         setDoctors(doctorsResponse.data ?? []);
       } catch (err) {
         console.error('Error al cargar filtros:', err);
-        setFiltersError(
-          'No se pudieron cargar los médicos y especialidades.'
-        );
+        setFiltersError('No se pudieron cargar los médicos y especialidades.');
       }
     };
 
@@ -70,7 +67,7 @@ function AppointmentsSearchPage() {
         const response = await getAppointments({
           pageSize,
           pageIndex: pageIndex + 1,
-        ...appliedFilters,
+          ...appliedFilters,
         });
 
         if (cancelled) return;
@@ -140,6 +137,7 @@ function AppointmentsSearchPage() {
 
     if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
       const [year, month, day] = rawDate.split('-');
+
       formattedDate = `${day}/${month}/${year}`;
     }
 
@@ -147,11 +145,9 @@ function AppointmentsSearchPage() {
       id: appointment.appointmentsId,
       date: formattedDate,
       time: appointment.availableTime?.startTime?.slice(0, 5) ?? '',
-      department:
-        appointment.doctor?.specialty?.name ?? 'Sin especialidad',
+      department: appointment.doctor?.specialty?.name ?? 'Sin especialidad',
       doctor: appointment.doctor?.name ?? 'Sin médico',
-      patient:
-        appointment.patient?.fullName?.trim() || 'Nombre no disponible',
+      patient: appointment.patient?.fullName?.trim() || 'Nombre no disponible',
       dni: appointment.patient?.dni ?? 'No disponible',
       status: statusLabel,
       statusType,
@@ -159,23 +155,24 @@ function AppointmentsSearchPage() {
   });
 
   const handleApplyFilters = () => {
-  const dni = patientQuery.trim().replace(/\./g, '');
+    const dni = patientQuery.trim().replace(/\./g, '');
 
-  if (dni && !/^\d+$/.test(dni)) {
-    setError('Ingrese un DNI válido, utilizando solo números.');
-    return;
-  }
+    if (dni && !/^\d+$/.test(dni)) {
+      setError('Ingrese un DNI válido, utilizando solo números.');
 
-  setError('');
+      return;
+    }
 
-  setPageIndex(0);
+    setError('');
 
-  setAppliedFilters({
-    dni: dni || null,
-    specialtyId: specialtyFilter || null,
-    doctorId: doctorFilter || null,
-    date: dateFilter || '',
-  });
+    setPageIndex(0);
+
+    setAppliedFilters({
+      dni: dni || null,
+      specialtyId: specialtyFilter || null,
+      doctorId: doctorFilter || null,
+      date: dateFilter || '',
+    });
   };
 
   return (
@@ -312,7 +309,7 @@ function AppointmentsSearchPage() {
           {/* Aplicar filtros: pendiente de integración */}
           <div>
             <Button
-               onClick={handleApplyFilters}
+              onClick={handleApplyFilters}
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 bg-med-primary-900 text-white font-medium py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -333,7 +330,6 @@ function AppointmentsSearchPage() {
               <span>Aplicar Filtros</span>
             </Button>
           </div>
-
         </div>
 
         {/* Botón Limpiar Filtros */}
@@ -368,9 +364,7 @@ function AppointmentsSearchPage() {
 
       {/* Cargando citas */}
       {loading && (
-        <p className="text-sm text-med-text-sub">
-          Cargando citas...
-        </p>
+        <p className="text-sm text-med-text-sub">Cargando citas...</p>
       )}
 
       {/* Error al cargar citas */}
@@ -464,11 +458,11 @@ function AppointmentsSearchPage() {
                   </td>
 
                   {/* Paciente */}
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-med-text-main">
-                        DNI: {item.dni}
-                      </p>
-                    </td>
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-med-text-main">
+                      DNI: {item.dni}
+                    </p>
+                  </td>
 
                   {/* Estado */}
                   <td className="px-6 py-4 text-center">

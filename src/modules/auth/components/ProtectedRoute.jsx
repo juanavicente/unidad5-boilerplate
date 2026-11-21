@@ -12,8 +12,7 @@ function ProtectedRoute({ children, redirectTo = '/login', allowedRole }) {
   const normalizedAllowedRole = allowedRole?.toUpperCase();
 
   if (allowedRole && normalizedRole !== normalizedAllowedRole) {
-    const roleRedirect =
-      normalizedRole === 'ADMINISTRADOR' ? '/admin' : '/';
+    const roleRedirect = normalizedRole === 'ADMINISTRADOR' ? '/admin' : '/';
 
     return <Navigate to={roleRedirect} replace />;
   }

@@ -65,14 +65,13 @@ function EditSpecialtyPage() {
         description: description.trim(),
       };
 
-    await updateSpecialty(id, updatedSpecialty);
+      await updateSpecialty(id, updatedSpecialty);
 
-    navigate('/admin/specialties', {
-      state: {
-        successMessage: 'Especialidad actualizada correctamente.',
-      },
-    });
-
+      navigate('/admin/specialties', {
+        state: {
+          successMessage: 'Especialidad actualizada correctamente.',
+        },
+      });
     } catch (err) {
       console.error('Error al actualizar especialidad:', err);
 

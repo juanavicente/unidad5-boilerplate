@@ -298,9 +298,7 @@ function AppointmentsPage() {
                 disabled={cancelingId !== null}
                 onClick={handleConfirmCancel}
               >
-                {cancelingId !== null
-                  ? 'Cancelando...'
-                  : 'Sí, cancelar turno'}
+                {cancelingId !== null ? 'Cancelando...' : 'Sí, cancelar turno'}
               </Button>
             </div>
           </div>

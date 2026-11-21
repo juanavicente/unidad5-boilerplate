@@ -52,13 +52,14 @@ function PatientHome() {
   const [searchVersion, setSearchVersion] = useState(0);
 
   // Construir los días hábiles de la semana seleccionada.
-  
+
   // Construir la semana completa: lunes a domingo.
   const weekDays = useMemo(() => {
     const today = new Date();
     const dayOfWeek = (today.getDay() + 6) % 7;
 
     const monday = new Date(today);
+
     monday.setHours(12, 0, 0, 0);
     monday.setDate(today.getDate() - dayOfWeek + weekOffset * 7);
 
@@ -66,6 +67,7 @@ function PatientHome() {
 
     return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(monday);
+
       date.setDate(monday.getDate() + index);
 
       return {
@@ -81,7 +83,6 @@ function PatientHome() {
       };
     }).filter((day) => day.isoDate >= todayIso);
   }, [weekOffset]);
-
 
   const todayIso = formatLocalDate(new Date());
 
@@ -482,7 +483,8 @@ function PatientHome() {
             </button>
 
             <span className="font-bold text-sm sm:text-base text-med-primary-900">
-              {weekDays[0]?.fullDate} - {weekDays[weekDays.length - 1]?.fullDate}
+              {weekDays[0]?.fullDate} -{' '}
+              {weekDays[weekDays.length - 1]?.fullDate}
             </span>
 
             <button
@@ -527,7 +529,7 @@ function PatientHome() {
         {searchedDoctorId && !loadingSlots && (
           <>
             {/* Vista desktop */}
-          <div className="hidden sm:grid sm:grid-cols-7 gap-2 pt-5">
+            <div className="hidden sm:grid sm:grid-cols-7 gap-2 pt-5">
               {weekDays.map((day) => {
                 const slots = slotsByDay[day.isoDate] || [];
 

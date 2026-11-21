@@ -30,7 +30,7 @@ export default defineConfig([
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       // regla para respetar la tabulación
-      indent: ['error', 2, { SwitchCase: 1 }],
+      indent: 'off',
       // regla para usar comillas simples
       quotes: ['error', 'single', { avoidEscape: true }],
       // regla para el uso de punto y coma al final de las líneas
