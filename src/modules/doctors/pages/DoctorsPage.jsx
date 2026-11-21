@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import { useNavigate } from 'react-router-dom';
 
 function DoctorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   const doctorsList = [
     {
@@ -50,11 +52,12 @@ function DoctorsPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Título y Acciones de Cabecera */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-5">
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-med-text-main">
             Directorio de Doctores
           </h1>
+
           <p className="text-sm text-med-text-sub mt-1">
             Gestione el personal médico y supervise su disponibilidad actual.
           </p>
@@ -62,7 +65,7 @@ function DoctorsPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Barra de Búsqueda */}
-          <div className="relative min-w-[240px] flex-1 sm:flex-initial">
+          <div className="relative w-full sm:w-60 shrink-0">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-med-text-muted">
               <svg
                 className="w-4 h-4"
@@ -78,21 +81,23 @@ function DoctorsPage() {
                 />
               </svg>
             </span>
+
             <input
               type="text"
               placeholder="Buscar doctor por nombre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
+              className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
 
+          {/* Agregar Disponibilidad Horaria */}
           <Button
-            onClick={() => alert('Abrir modal de disponibilidad horaria')}
-            className="flex items-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white"
+            onClick={() => navigate('/admin/availabilities')}
+            className="flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
           >
             <svg
-              className="w-4 h-4"
+              className="w-4 h-4 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -104,12 +109,14 @@ function DoctorsPage() {
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
+
             <span>Agregar Disponibilidad Horaria</span>
           </Button>
 
+          {/* Nuevo Doctor */}
           <Button
             onClick={() => alert('Abrir modal de nuevo doctor')}
-            className="flex items-center gap-1.5 bg-med-primary-700 hover:bg-med-primary-800 text-white"
+            className="flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
           >
             <span>+</span>
             <span>Nuevo Doctor</span>
@@ -124,6 +131,7 @@ function DoctorsPage() {
             Registros de Doctores
           </h2>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-med-primary-50/70 text-[11px] uppercase tracking-wider text-med-text-sub border-b border-med-border">
@@ -136,6 +144,7 @@ function DoctorsPage() {
                 <th className="px-6 py-3.5 text-right">Acciones</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-med-border-subtle">
               {filteredDoctors.map((doc) => (
                 <tr
@@ -149,6 +158,7 @@ function DoctorsPage() {
                         <div className="w-10 h-10 rounded-xl bg-med-primary-100 flex items-center justify-center text-xl">
                           {doc.avatar}
                         </div>
+
                         <span
                           className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
                             doc.statusType === 'active'
@@ -157,10 +167,12 @@ function DoctorsPage() {
                           }`}
                         />
                       </div>
+
                       <div>
                         <p className="font-semibold text-med-primary-900 leading-tight">
                           {doc.name}
                         </p>
+
                         <p className="text-xs text-med-text-muted mt-0.5">
                           ID: {doc.id}
                         </p>
@@ -271,10 +283,12 @@ function DoctorsPage() {
         {/* Paginador normalizado idéntico a Búsqueda y Filtrado de Citas */}
         <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
           <span>Mostrando 4 de 124 registros</span>
+
           <div className="flex items-center gap-1">
             <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
               ‹
             </button>
+
             <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
               ›
             </button>
