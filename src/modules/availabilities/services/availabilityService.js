@@ -9,14 +9,14 @@ const getDoctorAvailabilities = async (doctorId) => {
   return response.data;
 };
 
-// Crea disponibilidades
+// Crear disponibilidades
 const createAvailability = async (availabilityData) => {
   const response = await instance.post('/api/availabilities', availabilityData);
 
   return response.data;
 };
 
-// Actualiza disponibilidades
+// Actualizar disponibilidades
 const updateAvailability = async (availabilityData) => {
   const response = await instance.put('/api/availabilities', availabilityData);
 

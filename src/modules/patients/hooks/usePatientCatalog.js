@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  getSpecialties,
-  getDoctors,
-} from '../../appointments/services/appointmentService';
+import { getDoctors } from '../../appointments/services/appointmentService';
+import { getSpecialties } from '../../specialties/services/specialtyService';
 
 function usePatientCatalog({
   setSearchedDoctorId,

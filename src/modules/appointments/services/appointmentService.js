@@ -7,15 +7,6 @@ export const getPatientAppointments = async () => {
   return response.data;
 };
 
-// Obtener especialidades activas.
-export const getSpecialties = async () => {
-  const response = await instance.get('api/specialties', {
-    params: { pageSize: 100, pageIndex: 1 },
-  });
-
-  return response.data;
-};
-
 // Obtener médicos activos, opcionalmente filtrados por especialidad.
 export const getDoctors = async (specialtyId = null) => {
   const response = await instance.get('api/doctors', {
