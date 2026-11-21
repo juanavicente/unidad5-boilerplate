@@ -35,8 +35,8 @@ function LoginForm({ redirectPath, title }) {
 
       navigate(redirectPath || defaultRedirect);
     } catch (error) {
-      if (error?.response?.data?.code) {
-        setErrorMessage(frontendErrorMessage[error?.response?.data?.code]);
+      if (error?.response?.data?.errorCode) {
+        setErrorMessage(frontendErrorMessage[error?.response?.data?.errorCode]);
       } else {
         setErrorMessage('Llame a soporte');
       }

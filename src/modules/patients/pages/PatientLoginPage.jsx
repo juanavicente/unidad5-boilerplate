@@ -29,7 +29,7 @@ function PatientLoginPage() {
     const { error } = await singinPatient(formData.email.trim(), formData.dni);
 
     if (error) {
-      const errorCode = error?.response?.data?.code;
+      const errorCode = error?.response?.data?.errorCode;
 
       setErrorMessage(
         (errorCode && frontendErrorMessage[errorCode]) ||
