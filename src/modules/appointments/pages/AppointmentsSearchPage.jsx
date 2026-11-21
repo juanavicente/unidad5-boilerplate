@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  getAppointments,
-  getSpecialties,
-  getDoctors,
-} from '../services/appointmentService';
+import { getAppointments, getDoctors } from '../services/appointmentService';
+import { getSpecialties } from '../../specialties/services/specialtyService';
 import TablePagination from '../../shared/components/TablePagination';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
@@ -40,7 +37,7 @@ function AppointmentsSearchPage() {
         setFiltersError('');
 
         const [specialtiesResponse, doctorsResponse] = await Promise.all([
-          getSpecialties(),
+          getSpecialties(100, 1),
           getDoctors(),
         ]);
 

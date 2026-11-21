@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import {
-  getSpecialties,
   getDoctors,
   getAvailableSlots,
   createAppointment,
 } from '../../appointments/services/appointmentService';
+import { getSpecialties } from '../../specialties/services/specialtyService';
 
 function formatLocalDate(date) {
   return [
@@ -98,7 +98,7 @@ function PatientHome() {
         setLoadingSpecialties(true);
         setPageError('');
 
-        const response = await getSpecialties();
+        const response = await getSpecialties(100, 1);
 
         if (!active) return;
 

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { instance } from '../../shared/api/axiosInstance';
 import Card from '../../shared/components/Card';
 
 import {
@@ -10,6 +9,8 @@ import {
 } from '../services/availabilityService';
 
 import AvailabilityForm from '../components/AvailabilityForm';
+
+import { getDoctors } from '../../doctors/services/doctorService';
 
 function AvailabilitiesPage() {
   const [doctors, setDoctors] = useState([]);
@@ -30,15 +31,9 @@ function AvailabilitiesPage() {
         setLoadingDoctors(true);
         setError('');
 
-        const response = await instance.get('/api/doctors', {
-          params: {
-            pageSize: 100,
-            pageIndex: 1,
-          },
-        });
+        const response = await getDoctors(100, 0);
 
-        const result =
-          response.data?.data ?? response.data?.Data ?? response.data;
+        const result = response?.data ?? response?.Data ?? response;
 
         const doctorsData = Array.isArray(result) ? result : [];
 
