@@ -1,243 +1,62 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
-import {
-  getDoctors,
-  getAvailableSlots,
-  createAppointment,
-} from '../../appointments/services/appointmentService';
-import { getSpecialties } from '../../specialties/services/specialtyService';
-
-function formatLocalDate(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
-}
-
-function formatTime(time) {
-  return time ? time.slice(0, 5) : '--:--';
-}
+import useWeeklyCalendar from '../hooks/useWeeklyCalendar';
+import useWeeklyAvailability from '../hooks/useWeeklyAvailability';
+import usePatientBooking from '../hooks/usePatientBooking';
+import usePatientCatalog from '../hooks/usePatientCatalog';
 
 function PatientHome() {
   const navigate = useNavigate();
 
-  const [specialties, setSpecialties] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-
-  const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [selectedDoctorId, setSelectedDoctorId] = useState('');
   const [searchedDoctorId, setSearchedDoctorId] = useState('');
 
-  const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const [reason, setReason] = useState('');
-  const [confirmedModal, setConfirmedModal] = useState(false);
 
-  const [loadingSpecialties, setLoadingSpecialties] = useState(true);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const bookingInProgressRef = useRef(false);
-
-  const [pageError, setPageError] = useState('');
-  const [bookingError, setBookingError] = useState('');
-  const [availabilityError, setAvailabilityError] = useState('');
-
-  const [weekOffset, setWeekOffset] = useState(0);
   const [searchVersion, setSearchVersion] = useState(0);
 
-  // Construir los días hábiles de la semana seleccionada.
+  const {
+    specialties,
+    doctors,
+    selectedSpecialty,
+    setSelectedSpecialty,
+    selectedDoctorId,
+    setSelectedDoctorId,
+    loadingSpecialties,
+    loadingDoctors,
+    pageError,
+  } = usePatientCatalog({
+    setSearchedDoctorId,
+    setSelectedSlot,
+    setSelectedDate,
+  });
 
-  // Construir la semana completa: lunes a domingo.
-  const weekDays = useMemo(() => {
-    const today = new Date();
-    const dayOfWeek = (today.getDay() + 6) % 7;
+  const { weekOffset, weekDays, firstFutureDay, changeWeek } =
+    useWeeklyCalendar();
 
-    const monday = new Date(today);
+  const {
+    availableSlots,
+    loadingSlots,
+    availabilityError,
+    setAvailabilityError,
+  } = useWeeklyAvailability({
+    doctorId: searchedDoctorId,
+    weekDays,
+    searchVersion,
+  });
 
-    monday.setHours(12, 0, 0, 0);
-    monday.setDate(today.getDate() - dayOfWeek + weekOffset * 7);
-
-    const todayIso = formatLocalDate(today);
-
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(monday);
-
-      date.setDate(monday.getDate() + index);
-
-      return {
-        dayName: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'][index],
-        dateNumber: String(date.getDate()),
-        fullDate: date.toLocaleDateString('es-AR', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        }),
-        isoDate: formatLocalDate(date),
-      };
-    }).filter((day) => day.isoDate >= todayIso);
-  }, [weekOffset]);
-
-  const todayIso = formatLocalDate(new Date());
-
-  const firstFutureDay =
-    weekDays.find((day) => day.isoDate >= todayIso) || weekDays[0];
-
-  // Cargar especialidades desde el backend.
-  useEffect(() => {
-    let active = true;
-
-    const loadSpecialties = async () => {
-      try {
-        setLoadingSpecialties(true);
-        setPageError('');
-
-        const response = await getSpecialties(100, 1);
-
-        if (!active) return;
-
-        const items = response?.data || [];
-
-        setSpecialties(items);
-
-        if (items.length > 0) {
-          setSelectedSpecialty(String(items[0].id));
-        }
-      } catch (error) {
-        if (active) {
-          setPageError(
-            error?.response?.data?.message ||
-              'No se pudieron cargar las especialidades.'
-          );
-        }
-      } finally {
-        if (active) {
-          setLoadingSpecialties(false);
-        }
-      }
-    };
-
-    loadSpecialties();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Cargar médicos cuando cambia la especialidad.
-  useEffect(() => {
-    let active = true;
-
-    const loadDoctors = async () => {
-      if (!selectedSpecialty) {
-        setDoctors([]);
-        setSelectedDoctorId('');
-
-        return;
-      }
-
-      try {
-        setLoadingDoctors(true);
-        setDoctors([]);
-        setSelectedDoctorId('');
-        setSearchedDoctorId('');
-        setAvailableSlots([]);
-        setSelectedSlot(null);
-        setSelectedDate('');
-
-        const response = await getDoctors(selectedSpecialty);
-
-        if (!active) return;
-
-        const items = response?.data || [];
-
-        setDoctors(items);
-
-        if (items.length > 0) {
-          setSelectedDoctorId(String(items[0].id));
-        }
-      } catch (error) {
-        if (active) {
-          setPageError(
-            error?.response?.data?.message ||
-              'No se pudieron cargar los médicos.'
-          );
-        }
-      } finally {
-        if (active) {
-          setLoadingDoctors(false);
-        }
-      }
-    };
-
-    loadDoctors();
-
-    return () => {
-      active = false;
-    };
-  }, [selectedSpecialty]);
-
-  // Cargar disponibilidad para los días visibles de la semana.
-  useEffect(() => {
-    let active = true;
-
-    const loadAvailability = async () => {
-      if (!searchedDoctorId) {
-        setAvailableSlots([]);
-
-        return;
-      }
-
-      try {
-        setLoadingSlots(true);
-        setAvailabilityError('');
-        setAvailableSlots([]);
-
-        const responses = await Promise.all(
-          weekDays.map((day) =>
-            getAvailableSlots(searchedDoctorId, day.isoDate)
-          )
-        );
-
-        if (!active) return;
-
-        const slots = responses.flatMap((response) =>
-          (response?.data || []).map((slot) => ({
-            id: slot.id,
-            date: slot.slotDate,
-            time: formatTime(slot.startTime),
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-          }))
-        );
-
-        setAvailableSlots(slots);
-      } catch (error) {
-        if (active) {
-          setAvailabilityError(
-            error?.response?.data?.message ||
-              'No se pudo consultar la disponibilidad. Intentá nuevamente.'
-          );
-        }
-      } finally {
-        if (active) {
-          setLoadingSlots(false);
-        }
-      }
-    };
-
-    loadAvailability();
-
-    return () => {
-      active = false;
-    };
-  }, [searchedDoctorId, weekDays, searchVersion]);
+  const {
+    bookingLoading,
+    bookingError,
+    setBookingError,
+    confirmedModal,
+    setConfirmedModal,
+    handleConfirmAppointment,
+  } = usePatientBooking();
 
   const currentDoctor = doctors.find(
     (doctor) => String(doctor.id) === selectedDoctorId
@@ -273,78 +92,9 @@ function PatientHome() {
   };
 
   const handleChangeWeek = (direction) => {
-    setWeekOffset((previous) => Math.max(0, previous + direction));
-
+    changeWeek(direction);
     setSelectedSlot(null);
     setSelectedDate('');
-  };
-
-  const handleConfirmAppointment = async () => {
-    // Evita solicitudes duplicadas incluso antes de que React actualice el estado.
-    if (bookingInProgressRef.current) return;
-
-    setBookingError('');
-
-    if (!currentDoctor || searchedDoctorId !== selectedDoctorId) {
-      setBookingError(
-        'Primero seleccioná un médico y consultá su disponibilidad.'
-      );
-
-      return;
-    }
-
-    if (!selectedSlot) {
-      setBookingError('Seleccioná un horario disponible.');
-
-      return;
-    }
-
-    if (!reason.trim()) {
-      setBookingError('Ingresá el motivo de la consulta.');
-
-      return;
-    }
-
-    const patientDni = sessionStorage.getItem('patientDni');
-
-    if (!patientDni) {
-      setBookingError(
-        'No se encontró la información de tu sesión. Cerrá sesión e ingresá nuevamente.'
-      );
-
-      return;
-    }
-
-    try {
-      bookingInProgressRef.current = true;
-      setBookingLoading(true);
-
-      await createAppointment({
-        doctorId: currentDoctor.id,
-        availabilitySlotId: selectedSlot.id,
-        patientDni,
-        reason: reason.trim(),
-      });
-
-      setConfirmedModal(true);
-    } catch (error) {
-      const status = error?.response?.status;
-
-      if (status === 409) {
-        setBookingError(
-          'Ese horario acaba de ser reservado por otra persona. Buscá otro disponible.'
-        );
-      } else {
-        setBookingError(
-          error?.response?.data?.message ||
-            error?.response?.data?.error ||
-            'No se pudo confirmar el turno. Verificá los datos e intentá nuevamente.'
-        );
-      }
-    } finally {
-      bookingInProgressRef.current = false;
-      setBookingLoading(false);
-    }
   };
 
   const specialtyName = currentDoctor?.specialty?.name || 'Especialidad médica';
@@ -410,7 +160,6 @@ function PatientHome() {
               onChange={(event) => {
                 setSelectedDoctorId(event.target.value);
                 setSearchedDoctorId('');
-                setAvailableSlots([]);
                 setSelectedSlot(null);
                 setSelectedDate('');
                 setBookingError('');
@@ -723,7 +472,15 @@ function PatientHome() {
 
         <Button
           type="button"
-          onClick={handleConfirmAppointment}
+          onClick={() =>
+            handleConfirmAppointment({
+              currentDoctor,
+              selectedDoctorId,
+              searchedDoctorId,
+              selectedSlot,
+              reason,
+            })
+          }
           disabled={bookingLoading}
           aria-busy={bookingLoading}
           className={`flex items-center justify-center gap-2 text-white font-medium py-3 px-6 rounded-xl shadow-md text-sm shrink-0 ${
@@ -791,7 +548,6 @@ function PatientHome() {
                   setSelectedSlot(null);
                   setReason('');
                   setSearchedDoctorId('');
-                  setAvailableSlots([]);
                   setSelectedDate('');
                   setBookingError('');
                 }}
