@@ -141,18 +141,15 @@ function useOverviewData() {
         setLoadingAppointments(true);
         setAppointmentsError(false);
 
-        const today = new Date();
-        const date = [
-          today.getFullYear(),
-          String(today.getMonth() + 1).padStart(2, '0'),
-          String(today.getDate()).padStart(2, '0'),
-        ].join('-');
+        // Obtener la fecha actual en hora local
+        const today = new Date().toLocaleDateString('en-CA');
 
-        const response = await getAppointmentsByDate(date);
+        const response = await getAppointmentsByDate(today);
         const appointments = response.data ?? [];
 
+        // Contar solamente los turnos BOOKED
         const confirmed = appointments.filter(
-          (appointment) => appointment.appointmentsStatus === 'Booked'
+          (appointment) => appointment.appointmentsStatus === 'BOOKED'
         );
 
         if (isMounted) {
