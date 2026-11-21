@@ -78,11 +78,14 @@ function EditDoctorPage() {
         specialtyId,
       };
 
-      await updateDoctor(id, updatedDoctor);
+    await updateDoctor(id, updatedDoctor);
 
-      alert('¡Doctor actualizado correctamente!');
+    navigate('/admin/doctors', {
+      state: {
+        successMessage: 'Médico actualizado correctamente.',
+      },
+    });
 
-      navigate('/admin/doctors');
     } catch (err) {
       console.error('Error al actualizar médico:', err);
 

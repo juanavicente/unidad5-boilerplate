@@ -62,9 +62,11 @@ function CreateDoctorPage() {
 
       await createDoctor(doctor);
 
-      alert('¡Doctor registrado correctamente!');
-
-      navigate('/admin/doctors');
+      navigate('/admin/doctors', {
+      state: {
+        successMessage: 'Médico registrado correctamente.',
+      },
+    });
     } catch (err) {
       console.error('Error al registrar médico:', err);
 

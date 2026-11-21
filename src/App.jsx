@@ -3,7 +3,6 @@ import {
   Navigate,
   RouterProvider,
 } from 'react-router-dom';
-import { AuthProvider } from './modules/auth/context/AuthProvider';
 import ProtectedRoute from './modules/auth/components/ProtectedRoute';
 import AdminLoginPage from './modules/auth/pages/AdminLoginPage';
 import PatientLoginPage from './modules/patients/pages/PatientLoginPage';
@@ -121,9 +120,7 @@ const router = createBrowserRouter(routes);
 
 function App() {
   return (
-    <AuthProvider>
       <RouterProvider router={router} />
-    </AuthProvider>
   );
 }
 
