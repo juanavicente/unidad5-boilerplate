@@ -1,7 +1,9 @@
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import { useNavigate } from 'react-router-dom';
 
 function AppointmentsPage() {
+  const navigate = useNavigate();
   const sampleAppointments = [
     {
       id: 1,
@@ -32,7 +34,7 @@ function AppointmentsPage() {
             Consulta y gestiona las citas médicas programadas.
           </p>
         </div>
-        <Button onClick={() => alert('Función de nuevo turno próximamente')}>
+        <Button onClick={() => navigate('/appointments/new')}>
           + Solicitar Nuevo Turno
         </Button>
       </div>

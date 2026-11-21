@@ -9,6 +9,8 @@ function PatientHome() {
   // Estados de selección de filtros
   const [selectedSpecialty, setSelectedSpecialty] = useState('Cardiología');
   const [selectedDoctorId, setSelectedDoctorId] = useState('doc-1');
+  const [searchedDoctorId, setSearchedDoctorId] = useState('');
+  const [weekOffset, setWeekOffset] = useState(0);
 
   // Médicos disponibles
   const doctorsList = [
@@ -41,50 +43,125 @@ function PatientHome() {
     },
   ];
 
+  const filteredDoctors = doctorsList.filter(
+    (doc) => doc.specialty === selectedSpecialty
+  );
+
   const currentDoctor =
-    doctorsList.find((doc) => doc.id === selectedDoctorId) || doctorsList[0];
+    filteredDoctors.find((doc) => doc.id === selectedDoctorId);
 
   // Días de la semana disponible
-  const weekDays = [
-    { dayName: 'LUN', dateNumber: '22', fullDate: 'Lunes 22 de Mayo de 2024' },
-    { dayName: 'MAR', dateNumber: '23', fullDate: 'Martes 23 de Mayo de 2024' },
-    {
-      dayName: 'MIE',
-      dateNumber: '24',
-      fullDate: 'Miércoles 24 de Mayo de 2024',
-    },
-    { dayName: 'JUE', dateNumber: '25', fullDate: 'Jueves 25 de Mayo de 2024' },
-    {
-      dayName: 'VIE',
-      dateNumber: '26',
-      fullDate: 'Viernes 26 de Mayo de 2024',
-    },
-  ];
+  const today = new Date();
+
+const monday = new Date(today);
+const dayOfWeek = (today.getDay() + 6) % 7;
+
+monday.setDate(today.getDate() - dayOfWeek + weekOffset * 7);
+
+const weekDays = Array.from({ length: 5 }, (_, index) => {
+  const date = new Date(monday);
+  date.setDate(monday.getDate() + index);
+
+  return {
+    dayName: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE'][index],
+    dateNumber: String(date.getDate()),
+    fullDate: date.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+    isoDate: [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-'),
+  };
+});
 
   // Horarios por día
-  const slotsByDay = {
-    22: ['08:00', '08:30', '09:00', '09:30', '10:00', '11:30'],
-    23: ['08:00', '09:00', '10:30', '11:00', '12:30'],
-    24: ['08:30', '09:30', '11:00', '11:30'],
-    25: [], // Sin turnos disponibles
-    26: ['08:00', '08:30', '09:00', '14:00', '14:30'],
-  };
+const mockAvailability = {
+  'doc-1': [
+    { id: 'slot-1', date: '2026-11-23', time: '08:00' },
+    { id: 'slot-2', date: '2026-11-23', time: '09:30' },
+    { id: 'slot-3', date: '2026-11-24', time: '10:00' },
+    { id: 'slot-4', date: '2026-11-30', time: '11:00' },
+  ],
+  'doc-2': [
+    { id: 'slot-5', date: '2026-11-23', time: '09:00' },
+    { id: 'slot-6', date: '2026-11-25', time: '11:30' },
+    { id: 'slot-7', date: '2026-12-01', time: '15:00' },
+  ],
+  'doc-3': [
+    { id: 'slot-8', date: '2026-11-24', time: '08:30' },
+    { id: 'slot-9', date: '2026-11-26', time: '14:00' },
+  ],
+};
+
+const availableSlots = mockAvailability[searchedDoctorId] || [];
+
+const slotsByDay = Object.fromEntries(
+  weekDays.map((day) => [
+    day.isoDate,
+    availableSlots.filter((slot) => slot.date === day.isoDate),
+  ])
+);
 
   // Día y slot horario seleccionado
-  const [selectedDayNumber, setSelectedDayNumber] = useState('22');
-  const [selectedSlot, setSelectedSlot] = useState('09:30');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [reason, setReason] = useState('');
   const [confirmedModal, setConfirmedModal] = useState(false);
 
-  const selectedDayObj =
-    weekDays.find((d) => d.dateNumber === selectedDayNumber) || weekDays[0];
+  const selectedDayObj = weekDays.find(
+    (day) => day.isoDate === selectedDate
+  );
 
-  const handleSelectSlot = (dayNum, slot) => {
-    setSelectedDayNumber(dayNum);
+  const handleSelectSlot = (slot) => {
+    setSelectedDate(slot.date);
     setSelectedSlot(slot);
   };
 
+  const buildAppointmentRequest = () => {
+    return {
+      doctorId: selectedDoctorId,
+      availabilitySlotId: selectedSlot.id,
+      reason: reason.trim(),
+    };
+  };
+
   const handleConfirmAppointment = () => {
+    if (
+      !currentDoctor ||
+      searchedDoctorId !== selectedDoctorId ||
+      !selectedSlot ||
+      !availableSlots.some((slot) => slot.id === selectedSlot.id)
+    ) {
+      alert('Seleccione un médico y un horario disponible antes de confirmar.');
+      return;
+    }
+
+    if (!reason.trim()) {
+      alert('Ingrese el motivo de la consulta.');
+      return;
+    }
+
+    const appointmentRequest = buildAppointmentRequest();
+
+    console.log('Datos de la reserva:', appointmentRequest);
+
     setConfirmedModal(true);
+};
+
+ const handleSearchAvailability = () => {
+  if (!selectedDoctorId) {
+    alert('Seleccione un médico para buscar disponibilidad.');
+    return;
+  }
+
+  setSearchedDoctorId(selectedDoctorId);
+  setSelectedDate(weekDays[0].isoDate);
+  setSelectedSlot(null);
   };
 
   return (
@@ -109,7 +186,20 @@ function PatientHome() {
             <div className="relative">
               <select
                 value={selectedSpecialty}
-                onChange={(e) => setSelectedSpecialty(e.target.value)}
+                onChange={(e) => {
+                const newSpecialty = e.target.value;
+
+                  setSelectedSpecialty(newSpecialty);
+
+                  const firstDoctor = doctorsList.find(
+                    (doc) => doc.specialty === newSpecialty
+                  );
+
+                  setSelectedDoctorId(firstDoctor?.id || '');
+                  setSelectedSlot(null);
+                  setSelectedDate('');
+                  setSearchedDoctorId('');
+                }}
                 className="w-full appearance-none px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 pr-10 cursor-pointer"
               >
                 <option value="Cardiología">Cardiología</option>
@@ -132,14 +222,21 @@ function PatientHome() {
             <div className="relative">
               <select
                 value={selectedDoctorId}
-                onChange={(e) => setSelectedDoctorId(e.target.value)}
+                onChange={(e) => {
+                setSelectedDoctorId(e.target.value);
+                setSelectedSlot(null);
+                setSelectedDate('');
+                setSearchedDoctorId('');
+              }}
                 className="w-full appearance-none px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 pr-10 cursor-pointer"
               >
-                {doctorsList.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.name}
-                  </option>
-                ))}
+                <option value="">Seleccione un médico</option>
+
+                 {filteredDoctors.map((doc) => (
+                <option key={doc.id} value={doc.id}>
+                  {doc.name}
+                </option>
+              ))}
               </select>
               <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-med-text-muted">
                 ▼
@@ -152,7 +249,7 @@ function PatientHome() {
             <Button
               type="button"
               className="w-full flex items-center justify-center gap-2 bg-med-primary-900 hover:bg-med-primary-800 text-white font-medium py-2.5 rounded-lg shadow-sm"
-              onClick={() => {}}
+              onClick={handleSearchAvailability}
             >
               <svg
                 className="w-4 h-4"
@@ -174,10 +271,11 @@ function PatientHome() {
       </Card>
 
       {/* 2. Card de Información del Doctor Seleccionado (Sin reseñas de doctor) */}
+      {currentDoctor && (
       <Card className="p-5 sm:p-6 flex items-center gap-4 border-med-border">
         <div className="relative shrink-0">
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-med-primary-100 flex items-center justify-center text-3xl border border-med-primary-200">
-            {currentDoctor.avatar}
+            {currentDoctor?.avatar}
           </div>
           <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
         </div>
@@ -185,20 +283,26 @@ function PatientHome() {
         <div className="overflow-hidden">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base sm:text-lg font-bold text-med-primary-900">
-              {currentDoctor.name}
+              {currentDoctor?.name}
             </h2>
             <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-med-primary-100 text-med-primary-700">
-              {currentDoctor.badge}
+              {currentDoctor?.badge}
             </span>
           </div>
           <p className="text-xs sm:text-sm font-semibold uppercase sm:normal-case tracking-wide sm:tracking-normal text-med-primary-700 sm:text-med-text-sub mt-0.5">
-            {currentDoctor.specialtyDetail}
+            {currentDoctor?.specialtyDetail}
           </p>
           <p className="text-xs text-med-text-muted mt-0.5 truncate">
-            {currentDoctor.clinic}
+            {currentDoctor?.clinic}
           </p>
         </div>
-      </Card>
+      </Card>)}
+
+      {searchedDoctorId === selectedDoctorId && selectedDoctorId && (
+        <p className="text-sm text-green-700">
+          Disponibilidad consultada para {currentDoctor?.name}.
+        </p>
+      )}
 
       {/* 3. Selector Semanal de Disponibilidad */}
       <Card className="p-5 sm:p-6 border-med-border">
@@ -208,15 +312,25 @@ function PatientHome() {
             <button
               type="button"
               className="p-1 rounded-md border border-med-border hover:bg-gray-50 text-med-text-sub transition"
+              onClick={() => {
+              setWeekOffset((prev) => Math.max(0, prev - 1));
+              setSelectedSlot(null);
+              setSelectedDate('');
+            }}
             >
               ‹
             </button>
             <span className="font-bold text-sm sm:text-base text-med-primary-900">
-              Lunes 22 - Viernes 26, Mayo
+              {weekDays[0].fullDate} - {weekDays[4].fullDate}
             </span>
             <button
               type="button"
               className="p-1 rounded-md border border-med-border hover:bg-gray-50 text-med-text-sub transition"
+              onClick={() => {
+              setWeekOffset((prev) => prev + 1);
+              setSelectedSlot(null);
+              setSelectedDate('');
+            }}
             >
               ›
             </button>
@@ -238,7 +352,7 @@ function PatientHome() {
         {/* --- A) VISTA DESKTOP: Grid semanal de 5 columnas (visible en sm+) --- */}
         <div className="hidden sm:grid sm:grid-cols-5 gap-3 pt-5">
           {weekDays.map((day) => {
-            const slots = slotsByDay[day.dateNumber] || [];
+           const slots = slotsByDay[day.isoDate] || [];
 
             return (
               <div
@@ -259,22 +373,20 @@ function PatientHome() {
                 <div className="w-full flex flex-col gap-2">
                   {slots.length > 0 ? (
                     slots.map((slot) => {
-                      const isSelected =
-                        selectedDayNumber === day.dateNumber &&
-                        selectedSlot === slot;
+                      const isSelected = selectedSlot?.id === slot.id;
 
                       return (
                         <button
-                          key={slot}
+                          key={slot.id}
                           type="button"
-                          onClick={() => handleSelectSlot(day.dateNumber, slot)}
+                          onClick={() => handleSelectSlot(slot)}
                           className={`w-full py-2 px-3 text-xs font-semibold rounded-lg border transition-all text-center ${
                             isSelected
                               ? 'bg-emerald-400 text-white border-emerald-400 shadow-sm'
                               : 'bg-white border-med-border text-med-primary-900 hover:border-med-primary-600 hover:bg-med-primary-50/50'
                           }`}
                         >
-                          {slot}
+                          {slot.time}
                         </button>
                       );
                     })
@@ -306,23 +418,17 @@ function PatientHome() {
             {/* Días en fila desplazable */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               {weekDays.map((day) => {
-                const isActive = selectedDayNumber === day.dateNumber;
+                const isActive = selectedDate === day.isoDate;
 
                 return (
                   <button
-                    key={day.dateNumber}
+                    key={day.isoDate}
                     type="button"
-                    onClick={() => {
-                      setSelectedDayNumber(day.dateNumber);
-                      const availableSlots = slotsByDay[day.dateNumber] || [];
-
-                      if (
-                        availableSlots.length > 0 &&
-                        !availableSlots.includes(selectedSlot)
-                      ) {
-                        setSelectedSlot(availableSlots[0]);
-                      }
+                   onClick={() => {
+                      setSelectedDate(day.isoDate);
+                      setSelectedSlot(null);
                     }}
+
                     className={`flex-1 min-w-[68px] py-2.5 px-2 rounded-xl text-center border transition-all ${
                       isActive
                         ? 'bg-med-primary-900 text-white border-med-primary-900 shadow-sm'
@@ -344,7 +450,9 @@ function PatientHome() {
                         isActive ? 'text-white/80' : 'text-med-text-muted'
                       }`}
                     >
-                      MAY
+                     {new Date(`${day.isoDate}T12:00:00`)
+                    .toLocaleDateString('es-AR', { month: 'short' })
+                    .toUpperCase()}
                     </span>
                   </button>
                 );
@@ -358,23 +466,23 @@ function PatientHome() {
               Horarios disponibles (Bloques de 30 min)
             </span>
 
-            {slotsByDay[selectedDayNumber]?.length > 0 ? (
+            {slotsByDay[selectedDate]?.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {slotsByDay[selectedDayNumber].map((slot) => {
-                  const isSelected = selectedSlot === slot;
+                {slotsByDay[selectedDate].map((slot) => {
+                  const isSelected = selectedSlot?.id === slot.id;
 
                   return (
                     <button
-                      key={slot}
+                      key={slot.id}
                       type="button"
-                      onClick={() => handleSelectSlot(selectedDayNumber, slot)}
+                      onClick={() => handleSelectSlot(slot)}
                       className={`py-2 px-2 text-xs font-semibold rounded-lg border transition-all ${
                         isSelected
                           ? 'border-2 border-med-primary-900 bg-white text-med-primary-900 font-bold shadow-xs'
                           : 'bg-white border-med-border text-med-text-main hover:bg-gray-50'
                       }`}
                     >
-                      {slot} AM
+                      {slot.time} hs
                     </button>
                   );
                 })}
@@ -390,6 +498,32 @@ function PatientHome() {
         </div>
       </Card>
 
+      {/* Motivo de consulta */}
+      <Card className="p-5 sm:p-6 border-med-border">
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="reason"
+            className="text-sm font-semibold text-med-primary-900"
+          >
+            Motivo de consulta
+          </label>
+
+          <textarea
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Ej: Consulta de control general"
+            rows={3}
+            maxLength={500}
+            className="w-full px-3.5 py-2.5 text-sm bg-white border border-med-border rounded-lg text-med-text-main focus:outline-none focus:ring-2 focus:ring-med-primary-600 resize-none"
+          />
+
+          <p className="text-xs text-med-text-muted">
+            Ingrese brevemente el motivo de su consulta.
+          </p>
+        </div>
+      </Card>
+
       {/* 4. Banner / Resumen de Selección y Confirmación */}
       <div className="bg-med-primary-50 border border-med-primary-200/60 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Detalle del Turno */}
@@ -400,11 +534,11 @@ function PatientHome() {
           <p className="text-base sm:text-lg font-bold text-med-primary-900 mt-0.5 flex items-center gap-2">
             <span>📅</span>
             <span>
-              {selectedDayObj.fullDate}, {selectedSlot} HS
+              {selectedDayObj?.fullDate || 'Seleccione una fecha'}, {selectedSlot?.time || '--:--'} HS
             </span>
           </p>
           <p className="text-xs text-med-text-sub mt-0.5">
-            {currentDoctor.clinic} • Duración: 30 min
+            {currentDoctor?.clinic} • Duración: 30 min
           </p>
         </div>
 
@@ -444,21 +578,25 @@ function PatientHome() {
             <p className="text-xs text-med-text-sub mt-2 leading-relaxed">
               Tu turno con el{' '}
               <strong className="text-med-text-main">
-                {currentDoctor.name}
+                {currentDoctor?.name}
               </strong>{' '}
               ha sido reservado para el{' '}
               <strong className="text-med-text-main">
-                {selectedDayObj.fullDate} a las {selectedSlot} hs
+                 {selectedDayObj?.fullDate || 'Fecha no seleccionada'} a las{' '}
+  {selectedSlot?.time || '--:--'} hs
               </strong>
               .
             </p>
 
             <div className="mt-5 p-3.5 bg-med-primary-50 border border-med-primary-200/60 rounded-xl text-xs text-med-primary-900 text-left space-y-1">
               <p>
-                <strong>Especialidad:</strong> {currentDoctor.specialtyDetail}
+                <strong>Especialidad:</strong> {currentDoctor?.specialtyDetail}
               </p>
               <p>
-                <strong>Lugar:</strong> {currentDoctor.clinic}
+                <strong>Motivo:</strong> {reason}
+              </p>
+              <p>
+                <strong>Lugar:</strong> {currentDoctor?.clinic}
               </p>
               <p>
                 <strong>Paciente:</strong> Johnathan Doe (DNI: 40.123.456)
