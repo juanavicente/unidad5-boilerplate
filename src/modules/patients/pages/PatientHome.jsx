@@ -52,26 +52,24 @@ function PatientHome() {
   const [searchVersion, setSearchVersion] = useState(0);
 
   // Construir los días hábiles de la semana seleccionada.
+  
+  // Construir la semana completa: lunes a domingo.
   const weekDays = useMemo(() => {
     const today = new Date();
     const dayOfWeek = (today.getDay() + 6) % 7;
 
     const monday = new Date(today);
-
     monday.setHours(12, 0, 0, 0);
+    monday.setDate(today.getDate() - dayOfWeek + weekOffset * 7);
 
-    // Si hoy es sábado o domingo, comenzar por el próximo lunes.
-    const daysUntilMonday = dayOfWeek >= 5 ? 7 - dayOfWeek : -dayOfWeek;
+    const todayIso = formatLocalDate(today);
 
-    monday.setDate(today.getDate() + daysUntilMonday + weekOffset * 7);
-
-    return Array.from({ length: 5 }, (_, index) => {
+    return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(monday);
-
       date.setDate(monday.getDate() + index);
 
       return {
-        dayName: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE'][index],
+        dayName: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'][index],
         dateNumber: String(date.getDate()),
         fullDate: date.toLocaleDateString('es-AR', {
           weekday: 'long',
@@ -81,8 +79,9 @@ function PatientHome() {
         }),
         isoDate: formatLocalDate(date),
       };
-    });
+    }).filter((day) => day.isoDate >= todayIso);
   }, [weekOffset]);
+
 
   const todayIso = formatLocalDate(new Date());
 
@@ -183,7 +182,7 @@ function PatientHome() {
     };
   }, [selectedSpecialty]);
 
-  // Cargar disponibilidad para los cinco días de la semana.
+  // Cargar disponibilidad para los días visibles de la semana.
   useEffect(() => {
     let active = true;
 
@@ -483,7 +482,7 @@ function PatientHome() {
             </button>
 
             <span className="font-bold text-sm sm:text-base text-med-primary-900">
-              {weekDays[0].fullDate} - {weekDays[4].fullDate}
+              {weekDays[0]?.fullDate} - {weekDays[weekDays.length - 1]?.fullDate}
             </span>
 
             <button
@@ -528,7 +527,7 @@ function PatientHome() {
         {searchedDoctorId && !loadingSlots && (
           <>
             {/* Vista desktop */}
-            <div className="hidden sm:grid sm:grid-cols-5 gap-3 pt-5">
+          <div className="hidden sm:grid sm:grid-cols-7 gap-2 pt-5">
               {weekDays.map((day) => {
                 const slots = slotsByDay[day.isoDate] || [];
 

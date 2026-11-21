@@ -22,15 +22,12 @@ function DoctorsPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   useEffect(() => {
-  if (location.state?.successMessage) {
-    setMessage(location.state.successMessage);
+    if (location.state?.successMessage) {
+      setMessage(location.state.successMessage);
 
-    window.history.replaceState(
-      { ...window.history.state, usr: null },
-      ''
-    );
-  }
-}, [location.state]);
+      window.history.replaceState({ ...window.history.state, usr: null }, '');
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const loadDoctors = async () => {
@@ -58,6 +55,7 @@ function DoctorsPage() {
 
     if (!doctor.isActive) {
       setMessage('Este médico ya se encuentra inactivo.');
+
       return;
     }
 
@@ -73,9 +71,7 @@ function DoctorsPage() {
       await deleteDoctor(doctorToDeactivate.id);
 
       setDoctors((previousDoctors) =>
-        previousDoctors.filter(
-          (doctor) => doctor.id !== doctorToDeactivate.id
-        )
+        previousDoctors.filter((doctor) => doctor.id !== doctorToDeactivate.id)
       );
 
       setTotal((previousTotal) => Math.max(0, previousTotal - 1));
@@ -86,8 +82,7 @@ function DoctorsPage() {
       console.error('Error al desactivar médico:', err);
 
       setMessage(
-        err.response?.data?.message ||
-        'No se pudo desactivar el médico.'
+        err.response?.data?.message || 'No se pudo desactivar el médico.'
       );
     }
   };
@@ -177,13 +172,13 @@ function DoctorsPage() {
       </div>
 
       {message && (
-      <div
-        role="status"
-        className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm"
-      >
-        {message}
-      </div>
-    )}
+        <div
+          role="status"
+          className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm"
+        >
+          {message}
+        </div>
+      )}
 
       <Card className="p-0 overflow-hidden border-med-border">
         <div className="p-5 border-b border-med-border">
