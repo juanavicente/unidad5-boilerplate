@@ -59,6 +59,7 @@ function AppointmentsPage() {
   const [error, setError] = useState('');
   const [cancelingId, setCancelingId] = useState(null);
   const [cancelError, setCancelError] = useState('');
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -82,15 +83,19 @@ function AppointmentsPage() {
     loadAppointments();
   }, [loadAppointments]);
 
-  const handleCancel = async (appointmentId) => {
-    // Evitar cancelaciones simultáneas.
+  // Abrir el modal de confirmación.
+  const handleCancel = (appointment) => {
     if (cancelingId !== null) return;
 
-    const confirmed = window.confirm(
-      '¿Estás seguro de que querés cancelar este turno?'
-    );
+    setCancelError('');
+    setAppointmentToCancel(appointment);
+  };
 
-    if (!confirmed) return;
+  // Confirmar la cancelación y llamar al backend.
+  const handleConfirmCancel = async () => {
+    if (!appointmentToCancel || cancelingId !== null) return;
+
+    const appointmentId = appointmentToCancel.appointmentId;
 
     try {
       setCancelingId(appointmentId);
@@ -103,6 +108,8 @@ function AppointmentsPage() {
           (appointment) => appointment.appointmentId !== appointmentId
         )
       );
+
+      setAppointmentToCancel(null);
     } catch (err) {
       console.error('Error al cancelar el turno:', err);
 
@@ -112,6 +119,7 @@ function AppointmentsPage() {
         setCancelError('No tenés permiso para cancelar este turno.');
       } else if (status === 404) {
         setCancelError('El turno ya no existe o fue cancelado.');
+        setAppointmentToCancel(null);
         await loadAppointments();
       } else {
         setCancelError('No pudimos cancelar el turno. Intentá nuevamente.');
@@ -238,7 +246,7 @@ function AppointmentsPage() {
                     variant="outline"
                     className="w-full text-xs"
                     disabled={cancelingId !== null}
-                    onClick={() => handleCancel(appt.appointmentId)}
+                    onClick={() => handleCancel(appt)}
                   >
                     {isCanceling ? 'Cancelando...' : 'Cancelar Turno'}
                   </Button>
@@ -246,6 +254,56 @@ function AppointmentsPage() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal personalizado de confirmación */}
+      {appointmentToCancel && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cancel-modal-title"
+        >
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2
+              id="cancel-modal-title"
+              className="text-xl font-bold text-med-text-main"
+            >
+              ¿Cancelar este turno?
+            </h2>
+
+            <p className="mt-3 text-sm text-med-text-sub">
+              Estás por cancelar tu turno con{' '}
+              <strong className="text-med-text-main">
+                {appointmentToCancel.doctor?.name ?? 'el médico seleccionado'}
+              </strong>
+              .
+            </p>
+
+            <p className="mt-2 text-sm text-med-text-sub">
+              Esta acción no se puede deshacer.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <Button
+                variant="outline"
+                disabled={cancelingId !== null}
+                onClick={() => setAppointmentToCancel(null)}
+              >
+                Volver
+              </Button>
+
+              <Button
+                disabled={cancelingId !== null}
+                onClick={handleConfirmCancel}
+              >
+                {cancelingId !== null
+                  ? 'Cancelando...'
+                  : 'Sí, cancelar turno'}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
