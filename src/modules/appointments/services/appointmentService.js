@@ -59,9 +59,45 @@ export const createAppointment = async ({
   return response.data;
 };
 
+// Obtener los turnos de una fecha para el tablero administrativo.
+export const getAppointmentsByDate = async (date) => {
+  const response = await instance.get('/api/appointments', {
+    params: {
+      date,
+      pageSize: 100,
+      pageIndex: 1,
+    },
+  });
+
+  return response.data;
+};
+
 // Cancelar una reserva.
 export const cancelAppointment = async (appointmentId) => {
   const response = await instance.delete(`api/appointments/${appointmentId}`);
+
+  return response.data;
+};
+
+// Buscar citas desde el panel del administrador.
+export const getAppointments = async ({
+  specialtyId = null,
+  doctorId = null,
+  dni = null,
+  date = '',
+  pageSize = 10,
+  pageIndex = 1,
+} = {}) => {
+  const response = await instance.get('api/appointments/search', {
+    params: {
+      pageSize,
+      pageIndex,
+      ...(specialtyId ? { specialtyId } : {}),
+      ...(doctorId ? { doctorId } : {}),
+      ...(dni ? { dni } : {}),
+      ...(date ? { date } : {}),
+    },
+  });
 
   return response.data;
 };
