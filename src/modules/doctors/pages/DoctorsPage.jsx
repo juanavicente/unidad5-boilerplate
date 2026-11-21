@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getDoctors } from '../services/doctorService';
+import { getDoctors, deleteDoctor } from '../services/doctorService';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
+import TablePagination from '../../shared/components/TablePagination';
 import { useNavigate } from 'react-router-dom';
 import DeactivateDoctorModal from '../components/DeactivateDoctorModal';
 
@@ -12,6 +13,12 @@ function DoctorsPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const [doctorToDeactivate, setDoctorToDeactivate] = useState(null);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const pageSize = 10;
+
+  const totalPages = Math.ceil(total / pageSize);
 
   useEffect(() => {
   const loadDoctors = async () => {
@@ -19,9 +26,10 @@ function DoctorsPage() {
       setLoading(true);
       setError('');
 
-      const data = await getDoctors();
+      const data = await getDoctors(pageSize, pageIndex, searchTerm);
 
-      console.log('Respuesta de médicos:', data);
+      setDoctors(data.data ?? []);
+      setTotal(data.total ?? 0);
     } catch (err) {
       console.error('Error al cargar médicos:', err);
       setError('No se pudieron cargar los médicos.');
@@ -31,7 +39,8 @@ function DoctorsPage() {
   };
 
   loadDoctors();
-}, []);
+}, [pageIndex, searchTerm]);
+
 
 // Función para confirmar la baja lógica de un médico
 const handleDeactivate = (doctor) => {
@@ -43,54 +52,41 @@ const handleDeactivate = (doctor) => {
   setDoctorToDeactivate(doctor);
 };
 
-const confirmDeactivate = () => {
-  alert(
-    'Baja confirmada. La desactivación real se implementará al conectar el backend.'
-  );
+const confirmDeactivate = async () => {
+  if (!doctorToDeactivate) return;
 
-  setDoctorToDeactivate(null);
+  try {
+    await deleteDoctor(doctorToDeactivate.id);
+
+    setDoctors((previousDoctors) =>
+      previousDoctors.filter(
+        (doctor) => doctor.id !== doctorToDeactivate.id
+      )
+    );
+
+    setDoctorToDeactivate(null);
+
+    alert('Médico desactivado correctamente.');
+  } catch (err) {
+    console.error('Error al desactivar médico:', err);
+
+    alert(
+      err.response?.data?.message ||
+        'No se pudo desactivar el médico.'
+    );
+  }
 };
-  const doctorsList = [
-    {
-      id: 'MED-4920',
-      name: 'Dr. Alejandro Rivera',
-      specialty: 'Cardiología Clínica',
-      status: 'Active',
-      statusType: 'active',
-      avatar: '👨‍⚕️',
-    },
-    {
-      id: 'MED-2104',
-      name: 'Dra. Elena Martínez',
-      specialty: 'Pediatría Avanzada',
-      status: 'On Leave',
-      statusType: 'danger',
-      avatar: '👩‍⚕️',
-    },
-    {
-      id: 'MED-8831',
-      name: 'Dr. Marcos Torres',
-      specialty: 'Neurocirugía',
-      status: 'Active',
-      statusType: 'active',
-      avatar: '👨‍⚕️',
-    },
-    {
-      id: 'MED-1192',
-      name: 'Dra. Lucía Soria',
-      specialty: 'Ginecología',
-      status: 'Active',
-      statusType: 'active',
-      avatar: '👩‍⚕️',
-    },
-  ];
 
-  const filteredDoctors = doctorsList.filter(
-    (doc) =>
-      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const doctorsList = doctors.map((doctor) => ({
+  id: doctor.id,
+  name: doctor.name,
+  specialty: doctor.specialty?.name ?? 'Sin especialidad',
+  status: doctor.isActive ? 'Activo' : 'Inactivo',
+  statusType: doctor.isActive ? 'active' : 'inactive',
+  avatar: '👨‍⚕️',
+}));
+
+  const filteredDoctors = doctorsList;
 
   return (
     <div className="flex flex-col gap-6">
@@ -127,7 +123,10 @@ const confirmDeactivate = () => {
               type="text"
               placeholder="Buscar doctor por nombre..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPageIndex(0);
+              }}
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
           </div>
@@ -310,19 +309,13 @@ const confirmDeactivate = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Paginador normalizado idéntico a Búsqueda y Filtrado de Citas */}
-        <div className="p-4 bg-med-primary-50/50 border-t border-med-border flex items-center justify-between text-xs text-med-text-muted">
-          <span>Mostrando 4 de 124 registros</span>
-          <div className="flex items-center gap-1">
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ‹
-            </button>
-            <button className="px-2.5 py-1 border border-med-border rounded bg-white text-med-text-sub hover:bg-gray-50">
-              ›
-            </button>
-          </div>
-        </div>
+    <TablePagination
+       currentPage={pageIndex + 1}
+  totalPages={Math.max(1, totalPages)}
+  totalItems={total}
+  pageSize={pageSize}
+  onPageChange={(page) => setPageIndex(page - 1)}
+/>
       </Card>
       <DeactivateDoctorModal
         doctor={doctorToDeactivate}

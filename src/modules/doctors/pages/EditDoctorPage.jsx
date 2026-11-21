@@ -1,41 +1,99 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Card from '../../shared/components/Card';
-import { mockDoctors } from '../data/mockDoctors';
+import {
+  getDoctorById,
+  updateDoctor,
+} from '../services/doctorService';
+import { getSpecialties } from '../../specialties/services/specialtyService';
 
 function EditDoctorPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [error, setError] = useState('');
-  const doctor = mockDoctors.find((doc) => doc.id === id);
-  const [name, setName] = useState(doctor?.name ?? '');
-  const [specialtyId, setSpecialtyId] = useState(doctor?.specialtyId ?? '');
-  const [licenseNumber, setLicenseNumber] = useState(
-  doctor?.licenseNumber ?? ''
-  );
+  const [doctor, setDoctor] = useState(null);
+  const [specialties, setSpecialties] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = (e) => {
-  e.preventDefault();
-  setError('');
+  const [name, setName] = useState('');
+  const [specialtyId, setSpecialtyId] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  if (!name.trim()) {
-    setError('Debe ingresar el nombre completo del doctor.');
-    return;
-  }
+  useEffect(() => {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-  if (!specialtyId) {
-    setError('Debe seleccionar una especialidad.');
-    return;
-  }
+      const [doctorData, specialtiesResponse] = await Promise.all([
+        getDoctorById(id),
+        getSpecialties(100, 0),
+      ]);
 
-  if (!licenseNumber.trim()) {
-    setError('Debe ingresar el número de licencia médica.');
-    return;
-  }
+      setDoctor(doctorData);
+      setSpecialties(specialtiesResponse.data ?? []);
 
-  // El guardado real se conectará con la API.
-  alert('Datos válidos. Pendiente de conexión con el backend.');
-};
+      setName(doctorData.name ?? '');
+      setLicenseNumber(doctorData.licenseNumber ?? '');
+      setSpecialtyId(
+        doctorData.specialtyId ?? doctorData.specialty?.id ?? ''
+      );
+    } catch (err) {
+      console.error('Error al cargar datos del médico:', err);
+      setError('No se pudieron cargar los datos del médico.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    loadData();
+  }, [id]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!name.trim()) {
+      setError('Debe ingresar el nombre completo del doctor.');
+      return;
+    }
+
+    if (!specialtyId) {
+      setError('Debe seleccionar una especialidad.');
+      return;
+    }
+
+    if (!licenseNumber.trim()) {
+      setError('Debe ingresar el número de licencia médica.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const updatedDoctor = {
+        name: name.trim(),
+        licenseNumber: licenseNumber.trim(),
+        specialtyId,
+      };
+
+      await updateDoctor(id, updatedDoctor);
+
+      alert('¡Doctor actualizado correctamente!');
+
+      navigate('/admin/doctors');
+    } catch (err) {
+      console.error('Error al actualizar médico:', err);
+
+      setError(
+        err.response?.data?.message ||
+          'No se pudo actualizar el médico. Intente nuevamente.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
   <div className="flex flex-col gap-6">
@@ -54,9 +112,13 @@ function EditDoctorPage() {
       </span>
     </div>
 
-    {!doctor ? (
+    {loading ? (
+      <p className="text-med-text-sub">
+        Cargando datos del médico...
+      </p>
+    ) : !doctor ? (
       <p className="text-red-600">
-        No se encontró el médico seleccionado.
+        {error || 'No se encontró el médico seleccionado.'}
       </p>
     ) : (
       <Card className="border-med-border overflow-hidden">
@@ -101,10 +163,11 @@ function EditDoctorPage() {
                 className="w-full px-4 py-3 border border-med-border rounded-lg"
               >
                 <option value="">Seleccione especialidad</option>
-                <option value="1">Cardiología Clínica</option>
-                <option value="2">Pediatría Avanzada</option>
-                <option value="3">Neurocirugía</option>
-                <option value="4">Ginecología</option>
+                {specialties.map((specialty) => (
+                <option key={specialty.id} value={specialty.id}>
+                  {specialty.name}
+                </option>
+              ))}
               </select>
             </div>
 
@@ -152,9 +215,10 @@ function EditDoctorPage() {
 
             <button
               type="submit"
+              disabled={saving}
               className="px-5 py-3 rounded-lg bg-med-primary-900 text-white font-medium"
             >
-              Guardar Cambios
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>

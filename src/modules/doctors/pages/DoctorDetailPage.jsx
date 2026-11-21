@@ -1,15 +1,46 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { mockDoctors } from '../data/mockDoctors';
+import { getDoctorById } from '../services/doctorService';
 
 function DoctorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const doctor = mockDoctors.find((doc) => doc.id === id);
+  const [doctor, setDoctor] = useState(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState('');
 
-  if (!doctor) {
-    return <p>No se encontró el médico seleccionado.</p>;
-  }
+useEffect(() => {
+  const loadDoctor = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const data = await getDoctorById(id);
+
+      setDoctor(data);
+    } catch (err) {
+      console.error('Error al cargar médico:', err);
+      setError('No se pudo cargar la información del médico.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadDoctor();
+}, [id]);
+
+ if (loading) {
+    return <p className="p-6">Cargando información del médico...</p>;
+    }
+
+    if (error) {
+    return <p className="p-6 text-red-600">{error}</p>;
+    }
+
+    if (!doctor) {
+    return <p className="p-6">No se encontró el médico seleccionado.</p>;
+    }
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,14 +60,14 @@ function DoctorDetailPage() {
 
       <div className="rounded-xl border border-med-border bg-white p-6">
         <div className="flex items-center gap-4 mb-6">
-          <span className="text-4xl">{doctor.avatar}</span>
+          <span className="text-4xl">👨‍⚕️</span>
 
           <div>
             <h2 className="text-xl font-bold text-med-primary-900">
               {doctor.name}
             </h2>
             <p className="text-sm text-med-text-sub">
-              {doctor.specialty}
+              {doctor.specialty?.name ?? 'Sin especialidad'}
             </p>
           </div>
         </div>

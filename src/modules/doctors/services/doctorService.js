@@ -1,15 +1,18 @@
 import { instance } from '../../shared/api/axiosInstance';
 
 // Obtener médicos con paginación y búsqueda
+// Obtener médicos con paginación y búsqueda
 export const getDoctors = async (
   pageSize = 10,
-  pageIndex = 1,
+  pageIndex = 0,
   name = ''
 ) => {
+  const backendPageIndex = pageIndex + 1;
+
   const response = await instance.get('/api/doctors', {
     params: {
       pageSize,
-      pageIndex,
+      pageIndex: backendPageIndex,
       name,
     },
   });

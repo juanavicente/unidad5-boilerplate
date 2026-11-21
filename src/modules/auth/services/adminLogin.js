@@ -10,8 +10,8 @@ export const loginAdmin = async (username, password) => {
     return { data: 'mock-admin-token-12345', error: null };
   }
 
-  const response = await instance.post('api/admin/auth/login', {
-    username,
+  const response = await instance.post('api/auth/admin/login', {
+    email: username,
     password,
   });
 

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getSpecialties } from '../../specialties/services/specialtyService';
+import { createDoctor } from '../services/doctorService';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 
@@ -9,30 +11,69 @@ function CreateDoctorPage() {
   const [specialtyId, setSpecialtyId] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [error, setError] = useState('');
+  const [specialties, setSpecialties] = useState([]);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e) => {
-  e.preventDefault();
-  setError('');
+  useEffect(() => {
+  const loadSpecialties = async () => {
+    try {
+      const response = await getSpecialties(100, 0);
 
-  if (!name.trim()) {
-    setError('Debe ingresar el nombre completo del doctor.');
-    return;
-  }
+      setSpecialties(response.data ?? []);
+    } catch (err) {
+      console.error('Error al cargar especialidades:', err);
+      setError('No se pudieron cargar las especialidades.');
+    }
+  };
 
-  if (!specialtyId) {
-    setError('Debe seleccionar una especialidad.');
-    return;
-  }
+  loadSpecialties();
+  }, []);
 
-  if (!licenseNumber.trim()) {
-    setError('Debe ingresar el número de licencia médica.');
-    return;
-  }
 
-  // Por ahora solamente validamos los datos.
-  // El guardado real se implementará cuando esté disponible la API.
-  alert('Formulario válido. Pendiente de conexión con el backend.');
-};
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!name.trim()) {
+      setError('Debe ingresar el nombre completo del doctor.');
+      return;
+    }
+
+    if (!specialtyId) {
+      setError('Debe seleccionar una especialidad.');
+      return;
+    }
+
+    if (!licenseNumber.trim()) {
+      setError('Debe ingresar el número de licencia médica.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const doctor = {
+        name: name.trim(),
+        licenseNumber: licenseNumber.trim(),
+        specialtyId: specialtyId,
+      };
+
+      await createDoctor(doctor);
+
+      alert('¡Doctor registrado correctamente!');
+
+      navigate('/admin/doctors');
+    } catch (err) {
+      console.error('Error al registrar médico:', err);
+
+      setError(
+        err.response?.data?.message ||
+          'No se pudo registrar el médico. Intente nuevamente.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -94,9 +135,11 @@ function CreateDoctorPage() {
                 onChange={(e) => setSpecialtyId(e.target.value)}
               >
                 <option value="">Seleccione especialidad</option>
-                <option value="1">Cardiología</option>
-                <option value="2">Pediatría</option>
-                <option value="3">Traumatología</option>
+                {specialties.map((specialty) => (
+                <option key={specialty.id} value={specialty.id}>
+                  {specialty.name}
+                </option>
+              ))}
               </select>
             </div>
 
@@ -144,9 +187,10 @@ function CreateDoctorPage() {
 
             <Button
               type = "submit"
+              disabled={saving}
               className="bg-med-primary-900 text-white"
             >
-              Guardar Doctor
+              {saving ? 'Guardando...' : 'Guardar Doctor'}
             </Button>
           </div>
         </form>
