@@ -19,6 +19,7 @@ function SpecialtiesPage() {
 
   const [pageIndex, setPageIndex] = useState(0);
   const [total, setTotal] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const pageSize = 10;
   const totalPages = Math.ceil(total / pageSize);
@@ -46,7 +47,7 @@ function SpecialtiesPage() {
   };
 
   loadSpecialties();
-  }, [pageIndex, searchTerm]);
+  }, [pageIndex, searchTerm, refreshKey]);
 
 
   const specialtiesList = specialties.map((specialty) => ({
@@ -75,15 +76,19 @@ const confirmDeactivate = async () => {
   try {
     await deleteSpecialty(specialtyToDeactivate.id);
 
-    setSpecialties((previousSpecialties) =>
-      previousSpecialties.filter(
-        (specialty) => specialty.id !== specialtyToDeactivate.id
-      )
+    setSpecialtyToDeactivate(null);
+
+    const remainingTotal = Math.max(0, total - 1);
+    const lastPageIndex = Math.max(
+      0,
+      Math.ceil(remainingTotal / pageSize) - 1
     );
 
-    setTotal((previousTotal) => Math.max(0, previousTotal - 1));
-
-    setSpecialtyToDeactivate(null);
+    if (pageIndex > lastPageIndex) {
+      setPageIndex(lastPageIndex);
+    } else {
+      setRefreshKey((previous) => previous + 1);
+    }
 
     alert('Especialidad desactivada correctamente.');
   } catch (err) {
