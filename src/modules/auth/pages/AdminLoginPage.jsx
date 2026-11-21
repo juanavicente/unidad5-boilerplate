@@ -23,7 +23,7 @@ function AdminLoginPage() {
     const { error } = await singinAdmin(formData.email, formData.password);
 
     if (error) {
-      const errorCode = error?.response?.data?.code;
+      const errorCode = error?.response?.data?.errorCode;
 
       if (errorCode && frontendErrorMessage[errorCode]) {
         setErrorMessage(frontendErrorMessage[errorCode]);
