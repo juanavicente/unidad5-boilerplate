@@ -7,51 +7,51 @@ function DoctorDetailPage() {
   const navigate = useNavigate();
 
   const [doctor, setDoctor] = useState(null);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-useEffect(() => {
-  const loadDoctor = async () => {
-    try {
-      setLoading(true);
-      setError('');
+  useEffect(() => {
+    const loadDoctor = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-      const data = await getDoctorById(id);
+        const data = await getDoctorById(id);
 
-      setDoctor(data);
-    } catch (err) {
-      console.error('Error al cargar médico:', err);
-      setError('No se pudo cargar la información del médico.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        setDoctor(data);
+      } catch (err) {
+        console.error('Error al cargar médico:', err);
+        setError('No se pudo cargar la información del médico.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  loadDoctor();
-}, [id]);
+    loadDoctor();
+  }, [id]);
 
- if (loading) {
+  if (loading) {
     return <p className="p-6">Cargando información del médico...</p>;
-    }
+  }
 
-    if (error) {
+  if (error) {
     return <p className="p-6 text-red-600">{error}</p>;
-    }
+  }
 
-    if (!doctor) {
+  if (!doctor) {
     return <p className="p-6">No se encontró el médico seleccionado.</p>;
-    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <button
-            type="button"
-            onClick={() => navigate('/admin/doctors')}
-            className="inline-flex w-fit items-center gap-2 px-5 py-3 bg-med-primary-900 hover:bg-med-primary-800 text-white font-semibold rounded-lg shadow-md transition-colors"
-            >
-            <span>←</span>
-            <span>Volver al directorio</span>
+          type="button"
+          onClick={() => navigate('/admin/doctors')}
+          className="inline-flex w-fit items-center gap-2 px-5 py-3 bg-med-primary-900 hover:bg-med-primary-800 text-white font-semibold rounded-lg shadow-md transition-colors"
+        >
+          <span>←</span>
+          <span>Volver al directorio</span>
         </button>
         <h1 className="mt-4 text-2xl font-bold text-med-primary-900">
           Detalle del Doctor

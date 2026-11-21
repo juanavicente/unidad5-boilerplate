@@ -1,25 +1,24 @@
 import { createContext, useState } from 'react';
-import { login } from '../services/login';
 import { loginAdmin } from '../services/adminLogin';
 import { loginPatient } from '../services/patientLogin';
 
 const AuthContext = createContext();
 
 function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const token = localStorage.getItem('token');
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [role, setRole] = useState(() => localStorage.getItem('role'));
 
-    return Boolean(token);
-  });
+  const isAuthenticated = Boolean(token && role);
 
-  const singout = () => {
-    localStorage.clear();
-    sessionStorage.removeItem('patientDni');
-    setIsAuthenticated(false);
-  };
+  const setAuthSession = (data, patientDni = null) => {
+    if (!data?.token || !data?.role) {
+      throw new Error(
+        'La respuesta del servidor no contiene una sesión válida.'
+      );
+    }
 
-  const setAuthSession = (token, patientDni = null) => {
-    localStorage.setItem('token', token);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('role', data.role);
 
     if (patientDni !== null) {
       sessionStorage.setItem('patientDni', String(patientDni));
@@ -27,54 +26,52 @@ function AuthProvider({ children }) {
       sessionStorage.removeItem('patientDni');
     }
 
-    setIsAuthenticated(true);
+    setToken(data.token);
+    setRole(data.role);
   };
 
-  const singin = async (username, password) => {
-    const { data, error } = await login(username, password);
+  const singout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    sessionStorage.removeItem('patientDni');
 
-    if (error) {
-      return { error };
-    }
-
-    setAuthSession(data);
-
-    return { error: null };
+    setToken(null);
+    setRole(null);
   };
 
-  const singinAdmin = async (username, password) => {
-    const { data, error } = await loginAdmin(username, password);
+  const singinAdmin = async (email, password) => {
+    try {
+      const { data } = await loginAdmin(email, password);
 
-    if (error) {
+      setAuthSession(data);
+
+      return { error: null };
+    } catch (error) {
       return { error };
     }
-
-    setAuthSession(data);
-
-    return { error: null };
   };
 
   const singinPatient = async (email, dni) => {
-    const { data, error } = await loginPatient(email, dni);
+    try {
+      const { data } = await loginPatient(email, dni);
 
-    if (error) {
+      setAuthSession(data, dni);
+
+      return { error: null };
+    } catch (error) {
       return { error };
     }
-
-    setAuthSession(data, dni);
-
-    return { error: null };
   };
 
   return (
     <AuthContext.Provider
       value={{
+        token,
+        role,
         isAuthenticated,
-        singin,
         singinAdmin,
         singinPatient,
         singout,
-        setAuthSession,
       }}
     >
       {children}

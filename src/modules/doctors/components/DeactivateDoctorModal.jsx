@@ -17,8 +17,7 @@ function DeactivateDoctorModal({ doctor, onCancel, onConfirm }) {
         </h2>
 
         <p className="mt-3 text-sm text-med-text-sub">
-          ¿Está seguro de que desea desactivar a{' '}
-          <strong>{doctor.name}</strong>?
+          ¿Está seguro de que desea desactivar a <strong>{doctor.name}</strong>?
         </p>
 
         <p className="mt-2 text-sm text-med-text-muted">

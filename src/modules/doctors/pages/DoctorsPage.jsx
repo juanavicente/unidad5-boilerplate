@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDoctors, deleteDoctor } from '../services/doctorService';
@@ -44,6 +43,7 @@ function DoctorsPage() {
   const handleDeactivate = (doctor) => {
     if (!doctor.isActive) {
       alert('Este médico ya se encuentra inactivo.');
+
       return;
     }
 
@@ -57,9 +57,7 @@ function DoctorsPage() {
       await deleteDoctor(doctorToDeactivate.id);
 
       setDoctors((previousDoctors) =>
-        previousDoctors.filter(
-          (doctor) => doctor.id !== doctorToDeactivate.id
-        )
+        previousDoctors.filter((doctor) => doctor.id !== doctorToDeactivate.id)
       );
 
       setTotal((previousTotal) => Math.max(0, previousTotal - 1));
@@ -69,10 +67,7 @@ function DoctorsPage() {
     } catch (err) {
       console.error('Error al desactivar médico:', err);
 
-      alert(
-        err.response?.data?.message ||
-          'No se pudo desactivar el médico.'
-      );
+      alert(err.response?.data?.message || 'No se pudo desactivar el médico.');
     }
   };
 
@@ -249,9 +244,7 @@ function DoctorsPage() {
                         <button
                           title="Ver detalle"
                           className="p-1.5 rounded-lg hover:bg-med-primary-50 text-med-primary-600 hover:text-med-primary-900 transition"
-                          onClick={() =>
-                            navigate(`/admin/doctors/${doc.id}`)
-                          }
+                          onClick={() => navigate(`/admin/doctors/${doc.id}`)}
                         >
                           <svg
                             className="w-4 h-4"

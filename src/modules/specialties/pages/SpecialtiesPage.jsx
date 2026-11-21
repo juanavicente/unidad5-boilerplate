@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  getSpecialties,
-  deleteSpecialty,
-} from '../services/specialtyService';
+import { getSpecialties, deleteSpecialty } from '../services/specialtyService';
 import TablePagination from '../../shared/components/TablePagination';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
@@ -25,81 +22,79 @@ function SpecialtiesPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   useEffect(() => {
-  const loadSpecialties = async () => {
-    try {
-      setLoading(true);
-      setError('');
+    const loadSpecialties = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-      const response = await getSpecialties(
-        pageSize,
-        pageIndex + 1,
-        searchTerm
-      );
+        const response = await getSpecialties(
+          pageSize,
+          pageIndex + 1,
+          searchTerm
+        );
 
-      setSpecialties(response.data ?? []);
-      setTotal(response.total ?? 0);
-    } catch (err) {
-      console.error('Error al cargar especialidades:', err);
-      setError('No se pudieron cargar las especialidades.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        setSpecialties(response.data ?? []);
+        setTotal(response.total ?? 0);
+      } catch (err) {
+        console.error('Error al cargar especialidades:', err);
+        setError('No se pudieron cargar las especialidades.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  loadSpecialties();
+    loadSpecialties();
   }, [pageIndex, searchTerm, refreshKey]);
 
-
   const specialtiesList = specialties.map((specialty) => ({
-  id: specialty.id,
-  name: specialty.name,
-  description: specialty.description ?? '',
-  status: specialty.isActive ? 'Active' : 'Inactive',
-  icon: '🏥',
-}));
+    id: specialty.id,
+    name: specialty.name,
+    description: specialty.description ?? '',
+    status: specialty.isActive ? 'Active' : 'Inactive',
+    icon: '🏥',
+  }));
 
   const filteredSpecialties = specialtiesList;
 
-
   const handleDeactivate = (specialty) => {
-  if (specialty.status !== 'Active') {
-    alert('Esta especialidad ya se encuentra inactiva.');
-    return;
-  }
+    if (specialty.status !== 'Active') {
+      alert('Esta especialidad ya se encuentra inactiva.');
 
-  setSpecialtyToDeactivate(specialty);
-};
-
-const confirmDeactivate = async () => {
-  if (!specialtyToDeactivate) return;
-
-  try {
-    await deleteSpecialty(specialtyToDeactivate.id);
-
-    setSpecialtyToDeactivate(null);
-
-    const remainingTotal = Math.max(0, total - 1);
-    const lastPageIndex = Math.max(
-      0,
-      Math.ceil(remainingTotal / pageSize) - 1
-    );
-
-    if (pageIndex > lastPageIndex) {
-      setPageIndex(lastPageIndex);
-    } else {
-      setRefreshKey((previous) => previous + 1);
+      return;
     }
 
-    alert('Especialidad desactivada correctamente.');
-  } catch (err) {
-    console.error('Error al desactivar especialidad:', err);
+    setSpecialtyToDeactivate(specialty);
+  };
 
-    alert(
-      err.response?.data?.message ||
-      'No se pudo desactivar la especialidad.'
-    );
-  }
-};
+  const confirmDeactivate = async () => {
+    if (!specialtyToDeactivate) return;
+
+    try {
+      await deleteSpecialty(specialtyToDeactivate.id);
+
+      setSpecialtyToDeactivate(null);
+
+      const remainingTotal = Math.max(0, total - 1);
+      const lastPageIndex = Math.max(
+        0,
+        Math.ceil(remainingTotal / pageSize) - 1
+      );
+
+      if (pageIndex > lastPageIndex) {
+        setPageIndex(lastPageIndex);
+      } else {
+        setRefreshKey((previous) => previous + 1);
+      }
+
+      alert('Especialidad desactivada correctamente.');
+    } catch (err) {
+      console.error('Error al desactivar especialidad:', err);
+
+      alert(
+        err.response?.data?.message || 'No se pudo desactivar la especialidad.'
+      );
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -138,8 +133,9 @@ const confirmDeactivate = async () => {
               placeholder="Buscar especialidad..."
               value={searchTerm}
               onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPageIndex(0);}}
+                setSearchTerm(e.target.value);
+                setPageIndex(0);
+              }}
 
               className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-med-border rounded-lg text-med-text-main placeholder-med-text-muted focus:outline-none focus:ring-1 focus:ring-med-primary-600"
             />
@@ -156,17 +152,11 @@ const confirmDeactivate = async () => {
         </div>
       </div>
 
-    {loading && (
-      <p className="text-sm text-med-text-sub">
-        Cargando especialidades...
-      </p>
-    )}
+      {loading && (
+        <p className="text-sm text-med-text-sub">Cargando especialidades...</p>
+      )}
 
-    {error && (
-      <p className="text-sm text-red-600">
-        {error}
-      </p>
-    )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       {/* Tabla Principal de Especialidades */}
       <Card className="p-0 overflow-hidden border-med-border">
@@ -249,8 +239,7 @@ const confirmDeactivate = async () => {
                       <button
                         title="Eliminar especialidad"
                         className="p-1.5 rounded-lg hover:bg-red-50 text-med-danger-text transition"
-                        onClick={() => handleDeactivate(spec)
-                        }
+                        onClick={() => handleDeactivate(spec)}
                       >
                         <svg
                           className="w-4 h-4"
@@ -284,10 +273,10 @@ const confirmDeactivate = async () => {
         />
       </Card>
       <DeactivateSpecialtyModal
-      specialty={specialtyToDeactivate}
-      onCancel={() => setSpecialtyToDeactivate(null)}
-      onConfirm={confirmDeactivate}
-    />
+        specialty={specialtyToDeactivate}
+        onCancel={() => setSpecialtyToDeactivate(null)}
+        onConfirm={confirmDeactivate}
+      />
     </div>
   );
 }

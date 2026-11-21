@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../shared/components/Card';
@@ -12,6 +11,7 @@ function formatDate(date) {
   if (!date) return 'Fecha no disponible';
 
   const [year, month, day] = date.split('-');
+
   return `${day}/${month}/${year}`;
 }
 
@@ -43,10 +43,12 @@ function getStatusInfo(status) {
     },
   };
 
-  return statuses[normalizedStatus] || {
-    label: status || 'Estado no disponible',
-    className: 'bg-gray-100 text-gray-700',
-  };
+  return (
+    statuses[normalizedStatus] || {
+      label: status || 'Estado no disponible',
+      className: 'bg-gray-100 text-gray-700',
+    }
+  );
 }
 
 function AppointmentsPage() {
@@ -64,6 +66,7 @@ function AppointmentsPage() {
       setError('');
 
       const data = await getPatientAppointments();
+
       setAppointments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error al cargar los turnos:', err);
@@ -111,9 +114,7 @@ function AppointmentsPage() {
         setCancelError('El turno ya no existe o fue cancelado.');
         await loadAppointments();
       } else {
-        setCancelError(
-          'No pudimos cancelar el turno. Intentá nuevamente.'
-        );
+        setCancelError('No pudimos cancelar el turno. Intentá nuevamente.');
       }
     } finally {
       setCancelingId(null);
@@ -133,15 +134,11 @@ function AppointmentsPage() {
           </p>
         </div>
 
-        <Button onClick={() => navigate('/')}>
-          + Solicitar Nuevo Turno
-        </Button>
+        <Button onClick={() => navigate('/')}>+ Solicitar Nuevo Turno</Button>
       </div>
 
       {loading && (
-        <p className="text-sm text-med-text-sub">
-          Cargando tus turnos...
-        </p>
+        <p className="text-sm text-med-text-sub">Cargando tus turnos...</p>
       )}
 
       {!loading && error && (
@@ -175,10 +172,7 @@ function AppointmentsPage() {
               Cuando reserves un turno, vas a poder consultarlo desde acá.
             </p>
 
-            <Button
-              className="mt-4"
-              onClick={() => navigate('/')}
-            >
+            <Button className="mt-4" onClick={() => navigate('/')}>
               Reservar un turno
             </Button>
           </div>
@@ -218,12 +212,12 @@ function AppointmentsPage() {
                     Fecha:{' '}
                     <strong className="text-med-text-main font-semibold">
                       {formatDate(appt.availableTime?.date)}
-                    </strong>
-                    {' '}de{' '}
+                    </strong>{' '}
+                    de{' '}
                     <strong className="text-med-text-main font-semibold">
                       {formatTime(appt.availableTime?.startTime)}
-                    </strong>
-                    {' '}a{' '}
+                    </strong>{' '}
+                    a{' '}
                     <strong className="text-med-text-main font-semibold">
                       {formatTime(appt.availableTime?.endTime)}
                     </strong>

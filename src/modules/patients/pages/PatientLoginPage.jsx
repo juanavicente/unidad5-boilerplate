@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -8,7 +7,7 @@ import { frontendErrorMessage } from '../../auth/helpers/backendError';
 
 function PatientLoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showDni, setShowDni] = useState(false);
 
   const {
     register,
@@ -27,36 +26,26 @@ function PatientLoginPage() {
   const onValid = async (formData) => {
     setErrorMessage('');
 
-    try {
-      const { error } = await singinPatient(
-        formData.email.trim(),
-        formData.dni
-      );
+    const { error } = await singinPatient(formData.email.trim(), formData.dni);
 
-      if (error) {
-        setErrorMessage(
-          error.frontendErrorMessage || 'No se pudo iniciar sesión. Verificá tus datos.'
-        );
-        return;
-      }
-
-      navigate('/');
-    } catch (error) {
-      const code = error?.response?.data?.code;
-      const backendMessage = code
-        ? frontendErrorMessage[code]
-        : null;
+    if (error) {
+      const errorCode = error?.response?.data?.code;
 
       setErrorMessage(
-        backendMessage ||
-        'No pudimos iniciar sesión. Verificá tu conexión e intentá nuevamente.'
+        (errorCode && frontendErrorMessage[errorCode]) ||
+          (error.response
+            ? 'Credenciales inválidas'
+            : 'No pudimos conectar con el servicio de pacientes. Intentá nuevamente.')
       );
+
+      return;
     }
+
+    navigate('/');
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-med-primary-950 px-4 py-8 sm:p-6">
-      {/* Encabezado */}
       <div className="flex flex-col items-center mb-8">
         <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-3">
           <svg
@@ -79,7 +68,6 @@ function PatientLoginPage() {
         </h1>
       </div>
 
-      {/* Formulario */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-white/10 p-6 sm:p-10">
         <div className="mb-6">
           <h2 className="text-xl font-bold text-med-primary-900">
@@ -96,7 +84,6 @@ function PatientLoginPage() {
           className="flex flex-col gap-4"
           noValidate
         >
-          {/* Correo electrónico */}
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="email"
@@ -150,7 +137,6 @@ function PatientLoginPage() {
             )}
           </div>
 
-          {/* DNI */}
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="dni"
@@ -178,7 +164,7 @@ function PatientLoginPage() {
 
               <input
                 id="dni"
-                type={showPassword ? 'text' : 'password'}
+                type={showDni ? 'text' : 'password'}
                 inputMode="numeric"
                 autoComplete="off"
                 placeholder="••••••••"
@@ -199,12 +185,12 @@ function PatientLoginPage() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Ocultar DNI' : 'Mostrar DNI'}
-                title={showPassword ? 'Ocultar DNI' : 'Mostrar DNI'}
+                onClick={() => setShowDni(!showDni)}
+                aria-label={showDni ? 'Ocultar DNI' : 'Mostrar DNI'}
+                title={showDni ? 'Ocultar DNI' : 'Mostrar DNI'}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-med-text-muted hover:text-med-text-main"
               >
-                {showPassword ? (
+                {showDni ? (
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -257,6 +243,15 @@ function PatientLoginPage() {
             {isSubmitting ? 'Ingresando...' : 'Ingresar Paciente'}
           </Button>
 
+          <div className="p-3 bg-med-primary-50 border border-med-primary-100 rounded-lg text-xs text-med-primary-900 text-center">
+            <p className="font-semibold">Acceso de prueba:</p>
+            <p>Email: paciente@medportal.com</p>
+            <p>Ingresá tu DNI de 7 u 8 dígitos.</p>
+            <p className="mt-1">
+              En el primer acceso, tu usuario se registra automáticamente.
+            </p>
+          </div>
+
           {errorMessage && (
             <div
               className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 text-center"
@@ -268,7 +263,6 @@ function PatientLoginPage() {
         </form>
       </div>
 
-      {/* Acceso administrativo */}
       <div className="mt-6 text-center">
         <Link
           to="/admin/login"

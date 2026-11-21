@@ -19,16 +19,19 @@ instance.interceptors.request.use(
 );
 
 instance.interceptors.response.use(
-  (config) => {
-    return config;
-  },
+  (response) => response,
   (error) => {
-    if (error.status === 401) {
-      if (window.location.pathname.includes('/admin/')) {
-        localStorage.clear();
+    if (error.response?.status === 401) {
+      const currentPath = window.location.pathname;
+      const isAdminRoute = currentPath.startsWith('/admin');
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+
+      if (isAdminRoute && currentPath !== '/admin/login') {
+        window.location.href = '/admin/login';
+      } else if (!isAdminRoute && currentPath !== '/login') {
         window.location.href = '/login';
-      } else {
-        localStorage.removeItem('token');
       }
     }
 

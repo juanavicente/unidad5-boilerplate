@@ -1,8 +1,4 @@
-function DeactivateSpecialtyModal({
-  specialty,
-  onCancel,
-  onConfirm,
-}) {
+function DeactivateSpecialtyModal({ specialty, onCancel, onConfirm }) {
   if (!specialty) return null;
 
   return (

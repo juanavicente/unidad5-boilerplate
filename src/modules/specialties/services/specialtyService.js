@@ -16,21 +16,20 @@ export const getSpecialties = async (
 // Obtener una especialidad por ID
 export const getSpecialtyById = async (id) => {
   const response = await instance.get(`/api/specialties/${id}`);
+
   return response.data;
 };
 
 // Registrar una nueva especialidad
 export const createSpecialty = async (specialty) => {
   const response = await instance.post('/api/specialties', specialty);
+
   return response.data;
 };
 
 // Editar una especialidad
 export const updateSpecialty = async (id, specialty) => {
-  const response = await instance.put(
-    `/api/specialties/${id}`,
-    specialty
-  );
+  const response = await instance.put(`/api/specialties/${id}`, specialty);
 
   return response.data;
 };
@@ -38,5 +37,6 @@ export const updateSpecialty = async (id, specialty) => {
 // Desactivar una especialidad (baja lógica)
 export const deleteSpecialty = async (id) => {
   const response = await instance.delete(`/api/specialties/${id}`);
+
   return response.data;
 };

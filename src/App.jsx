@@ -1,4 +1,3 @@
-
 import {
   createBrowserRouter,
   Navigate,
@@ -6,26 +5,20 @@ import {
 } from 'react-router-dom';
 import { AuthProvider } from './modules/auth/context/AuthProvider';
 import ProtectedRoute from './modules/auth/components/ProtectedRoute';
-
 import AdminLoginPage from './modules/auth/pages/AdminLoginPage';
-
 import PatientLoginPage from './modules/patients/pages/PatientLoginPage';
 import PatientLayout from './modules/patients/components/PatientLayout';
 import PatientHome from './modules/patients/pages/PatientHome';
 import AppointmentsPage from './modules/patients/pages/AppointmentsPage';
-
 import DashboardLayout from './modules/dashboard/components/DashboardLayout';
 import OverviewPage from './modules/dashboard/pages/OverviewPage';
-
 import DoctorsPage from './modules/doctors/pages/DoctorsPage';
 import CreateDoctorPage from './modules/doctors/pages/CreateDoctorPage';
 import DoctorDetailPage from './modules/doctors/pages/DoctorDetailPage';
 import EditDoctorPage from './modules/doctors/pages/EditDoctorPage';
-
 import SpecialtiesPage from './modules/specialties/pages/SpecialtiesPage';
 import CreateSpecialtyPage from './modules/specialties/pages/CreateSpecialtyPage';
 import EditSpecialtyPage from './modules/specialties/pages/EditSpecialtyPage';
-
 import AppointmentsSearchPage from './modules/appointments/pages/AppointmentsSearchPage';
 import AvailabilitiesPage from './modules/availabilities/pages/AvailabilitiesPage';
 
@@ -41,7 +34,7 @@ const routes = [
   {
     path: '/',
     element: (
-      <ProtectedRoute redirectTo="/login">
+      <ProtectedRoute redirectTo="/login" allowedRole="Paciente">
         <PatientLayout />
       </ProtectedRoute>
     ),
@@ -59,7 +52,7 @@ const routes = [
   {
     path: '/admin',
     element: (
-      <ProtectedRoute redirectTo="/admin/login">
+      <ProtectedRoute redirectTo="/admin/login" allowedRole="Administrador">
         <DashboardLayout />
       </ProtectedRoute>
     ),
@@ -124,9 +117,9 @@ const routes = [
   },
 ];
 
-function App() {
-  const router = createBrowserRouter(routes);
+const router = createBrowserRouter(routes);
 
+function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router} />

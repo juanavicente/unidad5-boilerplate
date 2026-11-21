@@ -15,37 +15,39 @@ function CreateDoctorPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-  const loadSpecialties = async () => {
-    try {
-      const response = await getSpecialties(100, 0);
+    const loadSpecialties = async () => {
+      try {
+        const response = await getSpecialties(100, 0);
 
-      setSpecialties(response.data ?? []);
-    } catch (err) {
-      console.error('Error al cargar especialidades:', err);
-      setError('No se pudieron cargar las especialidades.');
-    }
-  };
+        setSpecialties(response.data ?? []);
+      } catch (err) {
+        console.error('Error al cargar especialidades:', err);
+        setError('No se pudieron cargar las especialidades.');
+      }
+    };
 
-  loadSpecialties();
+    loadSpecialties();
   }, []);
 
-
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (!name.trim()) {
       setError('Debe ingresar el nombre completo del doctor.');
+
       return;
     }
 
     if (!specialtyId) {
       setError('Debe seleccionar una especialidad.');
+
       return;
     }
 
     if (!licenseNumber.trim()) {
       setError('Debe ingresar el número de licencia médica.');
+
       return;
     }
 
@@ -136,10 +138,10 @@ function CreateDoctorPage() {
               >
                 <option value="">Seleccione especialidad</option>
                 {specialties.map((specialty) => (
-                <option key={specialty.id} value={specialty.id}>
-                  {specialty.name}
-                </option>
-              ))}
+                  <option key={specialty.id} value={specialty.id}>
+                    {specialty.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -160,19 +162,19 @@ function CreateDoctorPage() {
               />
             </div>
           </div>
-            {error && (
+          {error && (
             <div
-                role="alert"
-                className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+              role="alert"
+              className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
             >
-                {error}
+              {error}
             </div>
-            )}
+          )}
           <div className="flex justify-end gap-3 pt-5 border-t border-med-border">
             <Button
               type="button"
               onClick={() => navigate('/admin/doctors')}
-             style={{
+              style={{
                 backgroundColor: '#ffffff',
                 color: '#12395b',
                 border: '1px solid #d9e2ec',
@@ -180,13 +182,13 @@ function CreateDoctorPage() {
                 borderRadius: '8px',
                 fontWeight: '500',
                 cursor: 'pointer',
-            }}
+              }}
             >
               Cancelar
             </Button>
 
             <Button
-              type = "submit"
+              type="submit"
               disabled={saving}
               className="bg-med-primary-900 text-white"
             >

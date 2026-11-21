@@ -20,65 +20,67 @@ function EditSpecialtyPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-  const loadSpecialty = async () => {
-    try {
-      setLoading(true);
-      setError('');
+    const loadSpecialty = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-      const data = await getSpecialtyById(id);
+        const data = await getSpecialtyById(id);
 
-      setSpecialty(data);
-      setName(data.name ?? '');
-      setDescription(data.description ?? '');
-    } catch (err) {
-      console.error('Error al cargar especialidad:', err);
-      setError('No se pudo cargar la especialidad.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        setSpecialty(data);
+        setName(data.name ?? '');
+        setDescription(data.description ?? '');
+      } catch (err) {
+        console.error('Error al cargar especialidad:', err);
+        setError('No se pudo cargar la especialidad.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
     loadSpecialty();
   }, [id]);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  if (!name.trim()) {
-    setError('Debe ingresar el nombre de la especialidad.');
-    return;
-  }
+    if (!name.trim()) {
+      setError('Debe ingresar el nombre de la especialidad.');
 
-  if (!description.trim()) {
-    setError('Debe ingresar una descripción.');
-    return;
-  }
+      return;
+    }
 
-  try {
-    setSaving(true);
+    if (!description.trim()) {
+      setError('Debe ingresar una descripción.');
 
-    const updatedSpecialty = {
-      name: name.trim(),
-      description: description.trim(),
-    };
+      return;
+    }
 
-    await updateSpecialty(id, updatedSpecialty);
+    try {
+      setSaving(true);
 
-    alert('¡Especialidad actualizada correctamente!');
+      const updatedSpecialty = {
+        name: name.trim(),
+        description: description.trim(),
+      };
 
-    navigate('/admin/specialties');
-  } catch (err) {
-    console.error('Error al actualizar especialidad:', err);
+      await updateSpecialty(id, updatedSpecialty);
 
-    setError(
-      err.response?.data?.message ||
-      'No se pudo actualizar la especialidad. Intente nuevamente.'
-    );
-  } finally {
-    setSaving(false);
-  }
-};
+      alert('¡Especialidad actualizada correctamente!');
+
+      navigate('/admin/specialties');
+    } catch (err) {
+      console.error('Error al actualizar especialidad:', err);
+
+      setError(
+        err.response?.data?.message ||
+          'No se pudo actualizar la especialidad. Intente nuevamente.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -91,9 +93,9 @@ function EditSpecialtyPage() {
   if (!specialty) {
     return (
       <div className="flex flex-col gap-4">
-      <p className="text-red-600">
-        {error || 'No se encontró la especialidad seleccionada.'}
-      </p>
+        <p className="text-red-600">
+          {error || 'No se encontró la especialidad seleccionada.'}
+        </p>
 
         <button
           type="button"
@@ -129,17 +131,14 @@ function EditSpecialtyPage() {
         </h1>
 
         <p className="mt-1 text-sm text-med-text-sub">
-          Modifique la información técnica y administrativa de la
-          especialidad médica seleccionada.
+          Modifique la información técnica y administrativa de la especialidad
+          médica seleccionada.
         </p>
       </div>
 
       {/* Formulario */}
       <Card className="border-med-border">
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-5"
-        >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Nombre */}
           <div>
             <label

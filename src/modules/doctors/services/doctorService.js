@@ -2,11 +2,7 @@ import { instance } from '../../shared/api/axiosInstance';
 
 // Obtener médicos con paginación y búsqueda
 // Obtener médicos con paginación y búsqueda
-export const getDoctors = async (
-  pageSize = 10,
-  pageIndex = 0,
-  name = ''
-) => {
+export const getDoctors = async (pageSize = 10, pageIndex = 0, name = '') => {
   const backendPageIndex = pageIndex + 1;
 
   const response = await instance.get('/api/doctors', {
@@ -23,23 +19,27 @@ export const getDoctors = async (
 // Obtener un médico por ID
 export const getDoctorById = async (id) => {
   const response = await instance.get(`/api/doctors/${id}`);
+
   return response.data;
 };
 
 // Registrar un médico
 export const createDoctor = async (doctor) => {
   const response = await instance.post('/api/doctors', doctor);
+
   return response.data;
 };
 
 // Actualizar un médico
 export const updateDoctor = async (id, doctor) => {
   const response = await instance.put(`/api/doctors/${id}`, doctor);
+
   return response.data;
 };
 
 // Desactivar un médico (baja lógica)
 export const deleteDoctor = async (id) => {
   const response = await instance.delete(`/api/doctors/${id}`);
+
   return response.data;
 };

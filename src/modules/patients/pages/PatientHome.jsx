@@ -57,19 +57,17 @@ function PatientHome() {
     const dayOfWeek = (today.getDay() + 6) % 7;
 
     const monday = new Date(today);
+
     monday.setHours(12, 0, 0, 0);
 
     // Si hoy es sábado o domingo, comenzar por el próximo lunes.
-    const daysUntilMonday = dayOfWeek >= 5
-      ? 7 - dayOfWeek
-      : -dayOfWeek;
+    const daysUntilMonday = dayOfWeek >= 5 ? 7 - dayOfWeek : -dayOfWeek;
 
-    monday.setDate(
-      today.getDate() + daysUntilMonday + weekOffset * 7
-    );
+    monday.setDate(today.getDate() + daysUntilMonday + weekOffset * 7);
 
     return Array.from({ length: 5 }, (_, index) => {
       const date = new Date(monday);
+
       date.setDate(monday.getDate() + index);
 
       return {
@@ -105,6 +103,7 @@ function PatientHome() {
         if (!active) return;
 
         const items = response?.data || [];
+
         setSpecialties(items);
 
         if (items.length > 0) {
@@ -114,7 +113,7 @@ function PatientHome() {
         if (active) {
           setPageError(
             error?.response?.data?.message ||
-            'No se pudieron cargar las especialidades.'
+              'No se pudieron cargar las especialidades.'
           );
         }
       } finally {
@@ -139,6 +138,7 @@ function PatientHome() {
       if (!selectedSpecialty) {
         setDoctors([]);
         setSelectedDoctorId('');
+
         return;
       }
 
@@ -156,6 +156,7 @@ function PatientHome() {
         if (!active) return;
 
         const items = response?.data || [];
+
         setDoctors(items);
 
         if (items.length > 0) {
@@ -165,7 +166,7 @@ function PatientHome() {
         if (active) {
           setPageError(
             error?.response?.data?.message ||
-            'No se pudieron cargar los médicos.'
+              'No se pudieron cargar los médicos.'
           );
         }
       } finally {
@@ -189,6 +190,7 @@ function PatientHome() {
     const loadAvailability = async () => {
       if (!searchedDoctorId) {
         setAvailableSlots([]);
+
         return;
       }
 
@@ -220,7 +222,7 @@ function PatientHome() {
         if (active) {
           setAvailabilityError(
             error?.response?.data?.message ||
-            'No se pudo consultar la disponibilidad. Intentá nuevamente.'
+              'No se pudo consultar la disponibilidad. Intentá nuevamente.'
           );
         }
       } finally {
@@ -241,9 +243,7 @@ function PatientHome() {
     (doctor) => String(doctor.id) === selectedDoctorId
   );
 
-  const selectedDayObj = weekDays.find(
-    (day) => day.isoDate === selectedDate
-  );
+  const selectedDayObj = weekDays.find((day) => day.isoDate === selectedDate);
 
   const slotsByDay = Object.fromEntries(
     weekDays.map((day) => [
@@ -255,6 +255,7 @@ function PatientHome() {
   const handleSearchAvailability = () => {
     if (!selectedDoctorId) {
       setAvailabilityError('Seleccioná un médico antes de buscar.');
+
       return;
     }
 
@@ -272,9 +273,7 @@ function PatientHome() {
   };
 
   const handleChangeWeek = (direction) => {
-    setWeekOffset((previous) =>
-      Math.max(0, previous + direction)
-    );
+    setWeekOffset((previous) => Math.max(0, previous + direction));
 
     setSelectedSlot(null);
     setSelectedDate('');
@@ -290,16 +289,19 @@ function PatientHome() {
       setBookingError(
         'Primero seleccioná un médico y consultá su disponibilidad.'
       );
+
       return;
     }
 
     if (!selectedSlot) {
       setBookingError('Seleccioná un horario disponible.');
+
       return;
     }
 
     if (!reason.trim()) {
       setBookingError('Ingresá el motivo de la consulta.');
+
       return;
     }
 
@@ -309,6 +311,7 @@ function PatientHome() {
       setBookingError(
         'No se encontró la información de tu sesión. Cerrá sesión e ingresá nuevamente.'
       );
+
       return;
     }
 
@@ -334,8 +337,8 @@ function PatientHome() {
       } else {
         setBookingError(
           error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          'No se pudo confirmar el turno. Verificá los datos e intentá nuevamente.'
+            error?.response?.data?.error ||
+            'No se pudo confirmar el turno. Verificá los datos e intentá nuevamente.'
         );
       }
     } finally {
@@ -344,8 +347,7 @@ function PatientHome() {
     }
   };
 
-  const specialtyName =
-    currentDoctor?.specialty?.name || 'Especialidad médica';
+  const specialtyName = currentDoctor?.specialty?.name || 'Especialidad médica';
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
@@ -507,14 +509,13 @@ function PatientHome() {
         </div>
 
         {availabilityError && (
-          <p className="mt-4 text-sm text-red-600">
-            {availabilityError}
-          </p>
+          <p className="mt-4 text-sm text-red-600">{availabilityError}</p>
         )}
 
         {!searchedDoctorId && (
           <p className="py-12 text-center text-sm text-med-text-muted">
-            Seleccioná un médico y presioná «Buscar Disponibilidad» para consultar sus horarios.
+            Seleccioná un médico y presioná «Buscar Disponibilidad» para
+            consultar sus horarios.
           </p>
         )}
 
@@ -549,8 +550,7 @@ function PatientHome() {
                     <div className="w-full flex flex-col gap-2">
                       {slots.length > 0 ? (
                         slots.map((slot) => {
-                          const isSelected =
-                            selectedSlot?.id === slot.id;
+                          const isSelected = selectedSlot?.id === slot.id;
 
                           return (
                             <button
@@ -634,8 +634,7 @@ function PatientHome() {
                 {slotsByDay[selectedDate]?.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
                     {slotsByDay[selectedDate].map((slot) => {
-                      const isSelected =
-                        selectedSlot?.id === slot.id;
+                      const isSelected = selectedSlot?.id === slot.id;
 
                       return (
                         <button
@@ -732,9 +731,7 @@ function PatientHome() {
               : 'bg-med-primary-900 hover:bg-med-primary-800'
           }`}
         >
-          <span>
-            {bookingLoading ? 'Reservando...' : 'Confirmar Turno'}
-          </span>
+          <span>{bookingLoading ? 'Reservando...' : 'Confirmar Turno'}</span>
         </Button>
       </div>
 
